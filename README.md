@@ -1,4 +1,4 @@
-![DankCord](assets/DankCord.jpg "DankCord")
+![DankCord](assets/DankCord.png "DankCord")
 
 
 # DankCord - The first python library for Dank Memer selfbots!
