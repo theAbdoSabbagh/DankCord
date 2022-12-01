@@ -3,7 +3,7 @@ import threading, random, time, json
 from rich import print
 from websocket import create_connection
 
-from exceptions import InvalidToken
+from .exceptions import InvalidToken
 
 class Gateway:
   def __init__(self, token : str):

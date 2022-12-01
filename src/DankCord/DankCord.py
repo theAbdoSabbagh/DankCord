@@ -3,9 +3,9 @@ import json, datetime, time
 
 from rich import print, print_json
 from typing import Optional, Union
-from Objects import Response
-from exceptions import UnknownChannel
-from ws import Gateway
+from .Objects import Response
+from .exceptions import UnknownChannel
+from .ws import Gateway
 from string import printable
 
 class Client:
