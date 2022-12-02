@@ -1,7 +1,5 @@
 import faster_than_requests as requests
-import json
-import datetime
-import time
+import json, datetime, time
 
 from rich import print, print_json
 from typing import Optional, Union
@@ -9,7 +7,7 @@ from .Objects import Response, Message
 from .exceptions import UnknownChannel
 from .ws import Gateway
 from string import printable
-
+from threading import Thread
 
 class Client:
   def __init__(self, token: str, channel_id: id):
@@ -24,6 +22,9 @@ class Client:
     self.user_id: Optional[int] = self.gateway.user_id
     self.dankmemer = DankMemer(self.token)
     self._get_commands()
+    t1 = Thread(target = self._events_listener_test)
+    t1.daemon = True
+    t1.start()
 
   def _strip(self, content: str) -> str:
     return "".join([char for char in content if char in printable])
@@ -57,24 +58,33 @@ class Client:
       data = json.loads(f.read())
     return data[name]
 
-  def _confirm_command_ran(self, name: str, nonce_used: str, timeout: int):
+  def _confirm_command_ran(self, nonce_used: str, timeout: int):
     end = time.time() + timeout
     while time.time() < end:
       recieved_nonce = json.loads(self.ws.recv())
       try:
-        if recieved_nonce["d"]["interaction"]["user"]["id"] == str(self.user_id) and recieved_nonce["d"]["interaction"]["name"] == name and recieved_nonce["d"]["channel_id"] == str(self.channel_id):
+        if str(recieved_nonce["d"]["nonce"]) == str(nonce_used):
           return recieved_nonce["d"]
+      except Exception as e:
+        print(e)
+    return None
+
+  def _events_listener_test(self):
+    while True:
+      event = json.loads(self.ws.recv())
+      try:
+        if len(event["d"]["embeds"]) > 0:
+          print(event["d"]["embeds"])
       except:
         pass
-    return None
 
   def _OptionsBuilder(self, name, type_, **kwargs):
     options = [
       {
-          "type": type_,
-          "name": name,
-          "options": [
-          ]
+        "type": type_,
+        "name": name,
+        "options": [
+        ]
       }
     ]
 
@@ -131,11 +141,10 @@ class Client:
         },
         "nonce": nonce
     }
-    message_data = None
     message_object = False
     for i in range(attempts):
-      request = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
-      message_data = self._confirm_command_ran(name, nonce, timeout)
+      requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      message_data = self._confirm_command_ran(nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
         break
@@ -145,6 +154,7 @@ class Client:
 
   def run_sub_command(self, /, name: str, sub_name: str, retry=False, attempts=10, timeout: int = 10, **kwargs):
     nonce = self._create_nonce()
+    print(f"Nonce: {nonce}")
     command_info = self._get_command_info(name)
     attempts = attempts if attempts > 0 else 1
     type_ = 1
@@ -180,12 +190,10 @@ class Client:
         },
         "nonce": nonce
     }
-    message_data = None
     message_object = False
-    raw_name = name + " " + sub_name
     for i in range(attempts):
-      request = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
-      message_data = self._confirm_command_ran(raw_name, nonce, timeout)
+      requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      message_data = self._confirm_command_ran(nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
         break
@@ -194,7 +202,6 @@ class Client:
     return message_object
 
 # Whatever is below is being worked on
-
 
 class PepeCaptcha:
   def __init__(self) -> None:
