@@ -65,7 +65,7 @@ class Client:
       try:
         if recieved_nonce["d"]["interaction"]["user"]["id"] == str(self.user_id) and recieved_nonce["d"]["interaction"]["name"] == name and recieved_nonce["d"]["channel_id"] == str(self.channel_id):
           return recieved_nonce["d"]
-        time.sleep(0.1)
+        time.sleep(0.0001)
         if time.time() > end:
           break
       except:
