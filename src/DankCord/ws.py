@@ -1,4 +1,5 @@
-import threading, random, time, json
+import threading, random, time
+import orjson as json
 
 from rich import print
 from websocket import create_connection
@@ -9,6 +10,7 @@ class Gateway:
   def __init__(self, token : str):
     print(f"Booting up a local discord signal client.")
     self.session_id = None
+    self.user_id = None
     self.token = token
 
     self.__boot_ws()
@@ -61,5 +63,6 @@ class Gateway:
       raise InvalidToken("Invalid Discord account token used.")
 
     identify_json = json.loads(identify)
+    self.user_id = int(identify_json["d"]["user"]["id"])
     self.session_id = identify_json["d"]["session_id"]
     print("READY")
