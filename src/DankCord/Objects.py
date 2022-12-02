@@ -13,7 +13,7 @@ class Response:
 class Message:
   def __init__(self, data: dict) -> None:
     self.content = data["content"]
-    self.embed = data["embeds"][0]
+    self.embeds = data["embeds"]
     self.author = data["author"]
     self.channel = data["channel_id"]
     self.timestamp = data["timestamp"]
