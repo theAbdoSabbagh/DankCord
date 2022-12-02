@@ -59,13 +59,11 @@ class Client:
 
   def _confirm_command_ran(self, name: str, nonce_used: str, timeout: int):
     end = time.time() + timeout
-    while True:
+    while time.time() < end:
       recieved_nonce = json.loads(self.ws.recv())
       try:
         if recieved_nonce["d"]["interaction"]["user"]["id"] == str(self.user_id) and recieved_nonce["d"]["interaction"]["name"] == name and recieved_nonce["d"]["channel_id"] == str(self.channel_id):
           return recieved_nonce["d"]
-        if time.time() > end:
-          break
       except:
         pass
     return None
