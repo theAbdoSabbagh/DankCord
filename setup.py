@@ -9,7 +9,7 @@ setup(
     url='https://www.github.com/Sxvxgee/DankCord',
     license='MIT',
     packages=['DankCord'],
-    install_requires=['rich', 'typing-extensions'],
+    install_requires=['rich', 'typing-extensions', 'orjson'],
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     project_urls={
