@@ -32,8 +32,7 @@ class Client:
     return [(a, b) for a, b in dict.items()]
 
   def _get_guild_id(self):
-    response = Response(requests.get(
-        url=f"https://discord.com/api/v10/channels/{self.channel_id}", http_headers=[("Authorization", self.token)]))
+    response = Response(requests.get(url=f"https://discord.com/api/v10/channels/{self.channel_id}", http_headers=[("Authorization", self.token)]))
     return response.data['guild_id']
 
   def _create_nonce(self):
@@ -73,28 +72,28 @@ class Client:
 
   def _OptionsBuilder(self, name, type_, **kwargs):
     options = [
-        {
-            "type": type_,
-            "name": name,
-            "options": [
-            ]
-        }
+      {
+          "type": type_,
+          "name": name,
+          "options": [
+          ]
+      }
     ]
 
     type_types = {
-        str: 3,
-        bool: 5,
-        list: 2,
-        int: 10
+      str: 3,
+      bool: 5,
+      list: 2,
+      int: 10
     }
 
     option_type = 3
     for key, value in kwargs.items():
       option_type = type_types[type(value)]
       new_piece_of_data = {
-          "type": option_type,
-          "name": key,
-          "value": value
+        "type": option_type,
+        "name": key,
+        "value": value
       }
       options[0]["options"].append(new_piece_of_data)
 
@@ -137,8 +136,7 @@ class Client:
     message_data = None
     message_object = False
     for i in range(attempts):
-      request = requests.post("https://discord.com/api/v9/interactions", json.dumps(
-          data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      request = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
       message_data = self._confirm_command_ran(name, nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
@@ -157,30 +155,30 @@ class Client:
         type_ = item["type"]
         break
     data = {
-        "type": 2,
-        "application_id": "270904126974590976",
-        "guild_id": self.guild_id,
-        "channel_id": self.channel_id,
-        "session_id": self.session_id,
-        "data": {
-            "version": command_info["version"],
-            "id": command_info["id"],
-            "name": name,
-            "type": command_info["type"],
-            "options": self._OptionsBuilder(sub_name, type_, **kwargs),
-            "application_command": {
-                "id": command_info["id"],
-                "application_id": "270904126974590976",
-                "version": command_info["version"],
-                "default_permission": command_info["default_permission"],
-                "default_member_permissions": command_info["default_member_permissions"],
-                "type": command_info["type"],
-                "name": name,
-                "description": command_info["description"],
-                "dm_permission": command_info["dm_permission"],
-                "options": command_info["options"]
-            },
-            "attachments": []
+      "type": 2,
+      "application_id": "270904126974590976",
+      "guild_id": self.guild_id,
+      "channel_id": self.channel_id,
+      "session_id": self.session_id,
+      "data": {
+          "version": command_info["version"],
+          "id": command_info["id"],
+          "name": name,
+          "type": command_info["type"],
+          "options": self._OptionsBuilder(sub_name, type_, **kwargs),
+          "application_command": {
+              "id": command_info["id"],
+              "application_id": "270904126974590976",
+              "version": command_info["version"],
+              "default_permission": command_info["default_permission"],
+              "default_member_permissions": command_info["default_member_permissions"],
+              "type": command_info["type"],
+              "name": name,
+              "description": command_info["description"],
+              "dm_permission": command_info["dm_permission"],
+              "options": command_info["options"]
+          },
+          "attachments": []
         },
         "nonce": nonce
     }
@@ -188,8 +186,7 @@ class Client:
     message_object = False
     raw_name = name + " " + sub_name
     for i in range(attempts):
-      request = requests.post("https://discord.com/api/v9/interactions", json.dumps(
-          data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      request = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
       message_data = self._confirm_command_ran(raw_name, nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
@@ -215,10 +212,10 @@ class DankMemer:
   def __init__(self, token: str) -> None:
     self.token = token
     self.emoji_ids = [
-        819014822867894304, 796765883120353280,
-        860602697942040596,  860602923665588284,
-        860603013063507998, 936007340736536626,
-        933194488241864704, 680105017532743700
+      819014822867894304, 796765883120353280,
+      860602697942040596,  860602923665588284,
+      860603013063507998, 936007340736536626,
+      933194488241864704, 680105017532743700
     ]
 
   @property
@@ -230,6 +227,5 @@ class DankMemer:
     return self.emoji_ids
 
   def get_commands(self, channel_id: int) -> Response:
-    response = Response(requests.get(
-        f"https://discord.com/api/v9/channels/{channel_id}/application-commands/search?type=1&application_id=270904126974590976", http_headers=[("Authorization", self.token)]))
+    response = Response(requests.get(f"https://discord.com/api/v9/channels/{channel_id}/application-commands/search?type=1&application_id=270904126974590976", http_headers=[("Authorization", self.token)]))
     return response
