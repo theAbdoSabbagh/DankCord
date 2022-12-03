@@ -80,8 +80,6 @@ class Client:
       try:
         if event["d"]["channel_id"] == str(self.channel_id) or event["d"]["channel_id"] == "270904126974590976":
           self.ws_cache[event["d"]["nonce"]] = event["d"]
-        # if int(event["d"]["flags"]) == 64:
-          # print_json(json.dumps(event))
       except:
         pass
 
