@@ -3,3 +3,4 @@ config.json
 commands.json
 test.py
 bot.py
+.vscode
