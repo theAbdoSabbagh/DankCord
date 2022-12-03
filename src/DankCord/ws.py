@@ -6,13 +6,15 @@ from typing import Optional, Union
 from websocket import create_connection
 
 from .exceptions import InvalidToken
+from .logger import Logger
 
 class Gateway:
   def __init__(self, token : str):
-    print(f"Booting up a local discord signal client.")
     self.session_id: str = None
     self.user_id: int = None
     self.token = token
+    self.logger = Logger()
+    self.logger.bootup(f"Local Discord signal client.")
 
     self.__boot_ws()
 
@@ -22,14 +24,14 @@ class Gateway:
       self.ws.send(json.dumps({"op": 1, "d": None}))
 
   def __boot_ws(self):
-    print("Booting up the discord websocket client.")
+    self.logger.bootup("Discord websocket client.")
     ws = create_connection("wss://gateway.discord.gg/?v=9&encoding=json")
 
     hello = json.loads(ws.recv())
 
     self.ws = ws
     self.heartbeat_interval = hello["d"]["heartbeat_interval"]/1000
-    print("Booting up the discord heartbeat client.")
+    self.logger.bootup("Discord heartbeat client.")
 
     jitter_heartbeat = self.heartbeat_interval * random.uniform(0, 0.1)
 
@@ -42,7 +44,7 @@ class Gateway:
       return False
 
     thread = threading.Thread(target = self.heartbeat).start()
-    print("Booted up the discord heartbeat client. Now IDENTIFYING")
+    self.logger.bootup("Discord heartbeat client.", booted = True)
 
     ws.send(json.dumps(
       {
@@ -64,7 +66,7 @@ class Gateway:
       raise InvalidToken("Invalid Discord account token used.")
 
     identify_json = json.loads(identify)
+    self.logger = Logger(identify_json)
     self.user_id = int(identify_json["d"]["user"]["id"])
     self.session_id = identify_json["d"]["session_id"]
-    print("READY")
-    
+    self.logger.ws("Bot is ready.")
