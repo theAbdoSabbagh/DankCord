@@ -24,6 +24,7 @@ class Gateway:
       self.ws.send(json.dumps({"op": 1, "d": None}))
 
   def __boot_ws(self):
+    start = time.time()
     self.logger.bootup("Discord websocket client.")
     ws = create_connection("wss://gateway.discord.gg/?v=9&encoding=json")
 
@@ -65,8 +66,9 @@ class Gateway:
     if not identify:
       raise InvalidToken("Invalid Discord account token used.")
 
+    end = time.time()
     identify_json = json.loads(identify)
     self.logger = Logger(identify_json)
     self.user_id = int(identify_json["d"]["user"]["id"])
     self.session_id = identify_json["d"]["session_id"]
-    self.logger.ws("Bot is ready.")
+    self.logger.ws(f"Logged into bot in {round(end - start, 2)} seconds.")
