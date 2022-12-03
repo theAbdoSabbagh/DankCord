@@ -13,9 +13,9 @@ class Logger:
 
   def bootup(self, /, text : str, booted : bool = False):
     print(f"{self.header} {self._bot_info} [bold grey37]{'Booted' if booted else 'Booting'} up:[/] {text}")
-  
+
   def error(self, /, text : str):
     print(f"{self.header} {self._bot_info} [bold red]Error:[/] {text}")
-  
+
   def success(self, /, text : str):
     print(f"{self.header} {self._bot_info} [bold green]Success:[/] {text}")

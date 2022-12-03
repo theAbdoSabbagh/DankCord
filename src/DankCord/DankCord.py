@@ -17,12 +17,13 @@ class Client:
 
     self.gateway = Gateway(self.token)
     self.ws = self.gateway.ws
+    self.ws_cache = {}
 
     self.session_id: Optional[str] = self.gateway.session_id
     self.user_id: Optional[int] = self.gateway.user_id
     self.dankmemer = DankMemer(self.token)
     self._get_commands()
-    t1 = Thread(target = self._events_listener_test)
+    t1 = Thread(target = self._events_listener)
     t1.daemon = True
     t1.start()
 
@@ -68,17 +69,16 @@ class Client:
       try:
         if str(recieved_nonce["d"]["nonce"]) == str(nonce_used):
           return recieved_nonce["d"]
-      except Exception as e:
-        print(e)
+      except:
+        pass
     return None
 
-  def _events_listener_test(self):
-    return
+  def _events_listener(self):
     while True:
       event = json.loads(self.ws.recv())
       try:
-        if len(event["d"]["embeds"]) > 0:
-          print(event["d"]["embeds"])
+        if event["d"]["channel_id"] == str(self.channel_id) or event["d"]["channel_id"] == "270904126974590976":
+          self.ws_cache[event["d"]["nonce"]] = event["d"]
       except:
         pass
 
@@ -145,20 +145,23 @@ class Client:
         },
         "nonce": nonce
     }
-    message_object = False
     for i in range(attempts):
-      requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      response = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
       message_data = self._confirm_command_ran(nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
         break
     if status:
+      while not str(nonce) in self.ws_cache.keys():
+        time.sleep(0.00001)
+      message_data = self.ws_cache[str(nonce)]
       message_object = Message(message_data)
-    return message_object
+      return message_object
+    else:
+      return None
 
   def run_sub_command(self, /, name: str, sub_name: str, retry=False, attempts=10, timeout: int = 10, **kwargs):
     nonce = self._create_nonce()
-    print(f"Nonce: {nonce}")
     command_info = self._get_command_info(name)
     attempts = attempts if attempts > 0 else 1
     type_ = 1
@@ -194,7 +197,6 @@ class Client:
         },
         "nonce": nonce
     }
-    message_object = False
     for i in range(attempts):
       requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
       message_data = self._confirm_command_ran(nonce, timeout)
@@ -202,8 +204,13 @@ class Client:
       if retry is False or status is True:
         break
     if status:
+      while not str(nonce) in self.ws_cache.keys():
+        time.sleep(0.00001)
+      message_data = self.ws_cache[str(nonce)]
       message_object = Message(message_data)
-    return message_object
+      return message_object
+    else:
+      return None
 
 # Whatever is below is being worked on
 
