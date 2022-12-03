@@ -145,6 +145,7 @@ class Client:
         },
         "nonce": nonce
     }
+    message_object = None
     for i in range(attempts):
       response = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
       message_data = self._confirm_command_ran(nonce, timeout)
@@ -152,13 +153,11 @@ class Client:
       if retry is False or status is True:
         break
     if status:
-      while not str(nonce) in self.ws_cache.keys():
-        time.sleep(0.00001)
-      message_data = self.ws_cache[str(nonce)]
+      while not nonce in self.ws_cache.keys():
+        pass
+      message_data = self.ws_cache[nonce]
       message_object = Message(message_data)
-      return message_object
-    else:
-      return None
+    return message_object
 
   def run_sub_command(self, /, name: str, sub_name: str, retry=False, attempts=10, timeout: int = 10, **kwargs):
     nonce = self._create_nonce()
@@ -197,6 +196,7 @@ class Client:
         },
         "nonce": nonce
     }
+    message_object = None
     for i in range(attempts):
       requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
       message_data = self._confirm_command_ran(nonce, timeout)
@@ -204,13 +204,11 @@ class Client:
       if retry is False or status is True:
         break
     if status:
-      while not str(nonce) in self.ws_cache.keys():
-        time.sleep(0.00001)
-      message_data = self.ws_cache[str(nonce)]
+      while not nonce in self.ws_cache.keys():
+        pass
+      message_data = self.ws_cache[nonce]
       message_object = Message(message_data)
-      return message_object
-    else:
-      return None
+    return message_object
 
 # Whatever is below is being worked on
 
