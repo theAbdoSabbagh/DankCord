@@ -1,1 +1,1 @@
-from .dankcord import Client
+from .DankCord import Client
