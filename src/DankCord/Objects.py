@@ -3,7 +3,7 @@ import orjson as json
 class Response:
   def __init__(self, response: list) -> None:
     try:
-      self.data = json.loads(response[0])
+      self.data : dict = json.loads(response[0])
     except:
       self.data = response[0]
     self.format = response[1]
