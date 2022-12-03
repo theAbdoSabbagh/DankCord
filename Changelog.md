@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased] - 2022-12-03
+A new logger, improvements and new object.
+
+#### Added
+- feat: `Bot` object.
+- feat: `Logger` class for DankCord.
+
+#### Improved
+- improve: Get the guild ID of the bot.
+
 ## [Unreleased] - 2022-12-02
 A few major core additions and fixes.
 
