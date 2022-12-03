@@ -4,7 +4,7 @@ import json, datetime, time
 from rich import print, print_json
 from typing import Optional, Union
 from .Objects import Response, Message
-from .exceptions import UnknownChannel
+from .exceptions import InvalidToken, UnknownChannel
 from .ws import Gateway
 from string import printable
 from threading import Thread
@@ -34,7 +34,10 @@ class Client:
 
   def _get_guild_id(self):
     response = Response(requests.get(url=f"https://discord.com/api/v10/channels/{self.channel_id}", http_headers=[("Authorization", self.token)]))
-    return response.data['guild_id']
+    guild_id = response.data.get('guild_id')
+    if guild_id is None:
+      raise InvalidToken("Invalid Discord account token used.")
+    return guild_id
 
   def _create_nonce(self):
     return str(int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000 - 1420070400000) << 22)
@@ -70,6 +73,7 @@ class Client:
     return None
 
   def _events_listener_test(self):
+    return
     while True:
       event = json.loads(self.ws.recv())
       try:
