@@ -17,6 +17,7 @@ class Client:
 
     self.gateway = Gateway(self.token)
     self.ws = self.gateway.ws
+    self.logger = self.gateway.logger
     self.ws_cache = {}
 
     self.session_id: Optional[str] = self.gateway.session_id
@@ -79,6 +80,8 @@ class Client:
       try:
         if event["d"]["channel_id"] == str(self.channel_id) or event["d"]["channel_id"] == "270904126974590976":
           self.ws_cache[event["d"]["nonce"]] = event["d"]
+        # if int(event["d"]["flags"]) == 64:
+          # print_json(json.dumps(event))
       except:
         pass
 
@@ -114,7 +117,7 @@ class Client:
   def get_info(self) -> Response:
     return Response(requests.get(url="https://discord.com/api/v10/users/@me", http_headers=[("Authorization", self.token)]))
 
-  def run_command(self, /, name: str, retry=False, attempts=10, timeout: int = 10):
+  def run_command(self, /, name: str, retry=True, attempts=3, timeout: int = 10):
     nonce = self._create_nonce()
     command_info = self._get_command_info(name)
     attempts = attempts if attempts > 0 else 1
@@ -147,11 +150,18 @@ class Client:
     }
     message_object = None
     for i in range(attempts):
-      response = requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      response = Response(requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")]))
       message_data = self._confirm_command_ran(nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
         break
+      if isinstance(response.data, dict):
+        retry_after = int(response.data.get('retry_after'))
+      else:
+        print(type(response.data), response.data) # this happened once so i needed to figure out wtf was the problem, but it didnt happen again
+      if retry_after is not None:
+        self.logger.ratelimit(retry_after = retry_after, command_name = name)
+        time.sleep(retry_after)
     if status:
       while not nonce in self.ws_cache.keys():
         pass
@@ -159,7 +169,7 @@ class Client:
       message_object = Message(message_data)
     return message_object
 
-  def run_sub_command(self, /, name: str, sub_name: str, retry=False, attempts=10, timeout: int = 10, **kwargs):
+  def run_sub_command(self, /, name: str, sub_name: str, retry=True, attempts=3, timeout: int = 10, **kwargs):
     nonce = self._create_nonce()
     command_info = self._get_command_info(name)
     attempts = attempts if attempts > 0 else 1
@@ -198,11 +208,18 @@ class Client:
     }
     message_object = None
     for i in range(attempts):
-      requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")])
+      response = Response(requests.post("https://discord.com/api/v9/interactions", json.dumps(data), http_headers=[("Authorization", self.token), ("Content-Type", "application/json")]))
       message_data = self._confirm_command_ran(nonce, timeout)
       status = not message_data is None
       if retry is False or status is True:
         break
+      if isinstance(response.data, dict):
+        retry_after = int(response.data.get('retry_after'))
+      else:
+        print(type(response.data), response.data) # this happened once so i needed to figure out wtf was the problem, but it didnt happen again
+      if retry_after is not None:
+        self.logger.ratelimit(retry_after = retry_after, command_name = name)
+        time.sleep(retry_after)
     if status:
       while not nonce in self.ws_cache.keys():
         pass

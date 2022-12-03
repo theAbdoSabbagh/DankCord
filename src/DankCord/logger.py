@@ -19,3 +19,7 @@ class Logger:
 
   def success(self, /, text : str):
     print(f"{self.header} {self._bot_info} [bold green]Success:[/] {text}")
+  
+  def ratelimit(self, /, retry_after : int, command_name : str = None):
+    message = f"[bold red]Ratelimit:[/] Trying again in {retry_after} seconds." if command_name is None else f"[bold red]Ratelimit with {command_name}:[/] Trying again in {retry_after} seconds."
+    print(f"{self.header} {self._bot_info} {message}")
