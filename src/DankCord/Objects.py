@@ -76,7 +76,7 @@ class Button:
     try:
       self.emoji : Emoji = Emoji(data["emoji"])
     except:
-      self.emoi = None
+      self.emoji = None
     try:
       self.label : str = data["label"]
     except:
