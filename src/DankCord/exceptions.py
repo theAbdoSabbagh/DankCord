@@ -1,11 +1,14 @@
 class DankCordException(BaseException):
-  pass
+    pass
+
 
 class InvalidCommand(DankCordException):
-  pass
+    pass
+
 
 class InvalidToken(DankCordException):
-  pass
+    pass
+
 
 class UnknownChannel(DankCordException):
-  pass
+    pass
