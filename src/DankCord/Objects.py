@@ -1,4 +1,7 @@
+import json as __json
 import orjson as json
+
+from rich import print_json
 
 class Response:
   def __init__(self, response: list) -> None:
@@ -67,3 +70,11 @@ class Embed:
     self.description : str = data["description"]
     self.url : str = data["url"]
     self.footer : EmbedFooter = EmbedFooter(data["footer"])
+
+class Bot:
+  def __init__(self, data : dict) -> None:
+    self.username : str = data["d"]["user"]["username"]
+    self.id : int = int(data["d"]["user"]["id"])
+    self.discriminator : int = int(data["d"]["user"]["discriminator"])
+    self.email : str = data["d"]["user"]["email"]
+    self.bot : str = f"{self.username}#{self.discriminator}"
