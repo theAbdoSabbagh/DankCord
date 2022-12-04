@@ -48,7 +48,7 @@ class Gateway:
         response = orjson.loads(ws.recv())
 
         if response["op"] != 11:
-            print("Discord heartbeat client failed to boot.")
+            self.logger.error("Discord heartbeat client failed to boot.")
             return False
 
         threading.Thread(target=self.heartbeat).start()
