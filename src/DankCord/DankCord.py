@@ -13,7 +13,7 @@ from .DankMemer import DankMemer
 from .exceptions import UnknownChannel
 from .gateway import Gateway
 from .logger import Logger
-from .Objects import Message, Response
+from .Objects import Message, Response, Button
 
 
 class Client:
@@ -295,4 +295,39 @@ class Client:
             self.logger.error("Did not receive message nonce in time.")
             return None
 
-        return Message(_message, self)
+        return Message(_message)
+    
+    def click(self, button: Button, retry_attempts: int=5):
+        nonce = self._create_nonce()
+        data = {
+            "type": 3,
+            "nonce": nonce,
+            "guild_id": self.guild_id,
+            "session_id": self.session_id,
+            "channel_id": self.channel_id,
+            "message_flags": 0,
+            "message_id": button.message_id,
+            "application_id": "270904126974590976",
+            "data": {
+                "component_type": 2,
+                "custom_id": button.custom_id
+            }
+        }
+        for i in range(retry_attempts):
+            response = Response(
+                requests.post(  # type: ignore
+                    "https://discord.com/api/v9/interactions",
+                    orjson.dumps(data),
+                    http_headers=self._tupalize(
+                        {
+                            "Authorization": self.token,
+                            "Content-Type": "application/json",
+                        }
+                    ),
+                )
+            )
+            if isinstance(response.data, dict):
+              retry_after = int(response.data.get("retry_after", 0))
+              time.sleep(retry_after)
+            else:
+              break
