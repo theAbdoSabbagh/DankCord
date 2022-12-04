@@ -1,7 +1,7 @@
 .env
 __pycache__
 config.json
-commands.json
 test.py
 bot.py
 .vscode
+*_commands.json
