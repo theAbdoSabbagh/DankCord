@@ -106,7 +106,8 @@ class Client:
                     self.ws_cache[event["d"]["nonce"]][event["t"]] = event["d"]
 
             except Exception as e:
-                self.logger.error(f"Unhandled error during event listening: {e}")
+                self.logger.error(
+                    f"Unhandled error during event listening: {e}")
                 import traceback
 
                 traceback.print_exc()
@@ -119,7 +120,8 @@ class Client:
         option_type = 3
         for key, value in kwargs.items():
             option_type = type_types[type(value)]
-            new_piece_of_data = {"type": option_type, "name": key, "value": value}
+            new_piece_of_data = {"type": option_type,
+                                 "name": key, "value": value}
             options[0]["options"].append(new_piece_of_data)
 
         return options
@@ -181,7 +183,6 @@ class Client:
                     ),
                 )
             )
-
             post_handling = self._post_command_handling(
                 timeout, response, name, nonce, "MESSAGE_CREATE"
             )
@@ -250,7 +251,6 @@ class Client:
                     ],
                 )
             )
-
             post_handling = self._post_command_handling(
                 timeout, response, name, nonce, "MESSAGE_CREATE"
             )
@@ -272,7 +272,8 @@ class Client:
 
         if isinstance(response.data, dict):
             retry_after = int(response.data.get("retry_after", 0))
-            self.logger.ratelimit(retry_after=retry_after, command_name=name)
+            self.logger.ratelimit(
+                retry_after=retry_after, command_name=name)
             time.sleep(retry_after)
             return None
         elif not response.data:
@@ -294,4 +295,4 @@ class Client:
             self.logger.error("Did not receive message nonce in time.")
             return None
 
-        return Message(_message)
+        return Message(_message, self)

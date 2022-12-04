@@ -79,10 +79,13 @@ class Gateway:
         identify_json = orjson.loads(identify)
 
         for guild in identify_json["d"]["guilds"]:
-            for channel in guild["channels"]:
-                if channel["id"] == self.channel_id:
-                    self.guild_id = guild["id"]
-                    break
+            try:
+                for channel in guild["channels"]:
+                    if channel["id"] == self.channel_id:
+                        self.guild_id = guild["id"]
+                        break
+            except:
+                pass
 
         self.user_id = int(identify_json["d"]["user"]["id"])
         self.session_id = identify_json["d"]["session_id"]
