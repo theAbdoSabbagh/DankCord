@@ -84,8 +84,12 @@ class Gateway:
                     if channel["id"] == self.channel_id:
                         self.guild_id = guild["id"]
                         break
-            except:
-                pass
+            except Exception as e:
+                self.logger.error(
+                    f"Unhandled error during fetching guild id: {e}")
+                import traceback
+
+                traceback.print_exc()
 
         self.user_id = int(identify_json["d"]["user"]["id"])
         self.session_id = identify_json["d"]["session_id"]
