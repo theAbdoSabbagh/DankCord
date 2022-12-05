@@ -92,19 +92,20 @@ class Client:
             if not event or not event["d"] or not event["t"]:
                 continue
             try:
-                if "channel_id" not in event["d"] or "nonce" not in event["d"]:
+                if "channel_id" not in event["d"]:
                     continue
                 if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE"):
                     continue
-
                 if (
                     event["d"]["channel_id"] == self.channel_id
                     or event["d"]["channel_id"] == "270904126974590976"
                 ):
-                    if event["d"]["nonce"] not in self.ws_cache:
-                        self.ws_cache[event["d"]["nonce"]] = {}
-                    self.ws_cache[event["d"]["nonce"]][event["t"]] = event["d"]
-
+                    if not "nonce" in event["d"].keys():
+                        self.ws_cache[event["d"]["id"]] = event["d"]
+                    else:
+                        if not event["d"]["nonce"] in self.ws_cache:
+                            self.ws_cache[event["d"]["nonce"]] = {}
+                        self.ws_cache[event["d"]["nonce"]][event["t"]] = event["d"]
             except Exception as e:
                 self.logger.error(
                     f"Unhandled error during event listening: {e}")
@@ -183,8 +184,8 @@ class Client:
                     ),
                 )
             )
-            post_handling = self._post_command_handling(
-                timeout, response, name, nonce, "MESSAGE_CREATE"
+            post_handling = self._post_handling(
+                timeout, response, name, nonce, ["MESSAGE_CREATE"]
             )
             if post_handling:
                 return post_handling
@@ -251,20 +252,21 @@ class Client:
                     ],
                 )
             )
-            post_handling = self._post_command_handling(
-                timeout, response, name, nonce, "MESSAGE_CREATE"
+            post_handling = self._post_handling(
+                timeout, response, name, nonce, ["MESSAGE_CREATE"]
             )
             if post_handling:
                 return post_handling
             continue
 
-    def _post_command_handling(
+    def _post_handling(
         self,
         timeout: int,
         response: Response,
         name: str,
         nonce: str,
-        event_type: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE"],
+        event_type: list,
+        message_id: str = ""
     ) -> Optional[Message]:
         lim = time.time() + timeout
         _message = None
@@ -287,17 +289,26 @@ class Client:
 
         while time.time() < lim:
             if nonce in self.ws_cache:
-                if event_type in self.ws_cache[nonce]:
-                    _message = self.ws_cache[nonce][event_type]
-                    break
+                for i in event_type:
+                    if i in self.ws_cache[nonce]:
+                        _message = self.ws_cache[nonce][i]
+                        break
 
         if not _message:
-            self.logger.error("Did not receive message nonce in time.")
-            return None
+            if message_id != "":
+                for key, value in self.ws_cache.items():
+                    try:
+                        if value["id"].strip() == message_id.strip():
+                            _message = value
+                    except Exception as e:
+                        pass
+            else:
+                self.logger.error("Did not receive nonce in time.")
+                return None
 
         return Message(_message)
     
-    def click(self, button: Button, retry_attempts: int=5):
+    def click(self, button: Button, retry_attempts: int=10, timeout: int=10):
         nonce = self._create_nonce()
         data = {
             "type": 3,
@@ -326,8 +337,9 @@ class Client:
                     ),
                 )
             )
-            if isinstance(response.data, dict):
-              retry_after = int(response.data.get("retry_after", 0))
-              time.sleep(retry_after)
-            else:
-              break
+            post_handling = self._post_handling(
+                timeout, response, "button interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=button.message_id
+            )
+            if post_handling:
+                return post_handling
+            continue

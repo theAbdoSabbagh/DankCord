@@ -130,6 +130,7 @@ class Embed:
         self.footer: Optional[EmbedFooter] = (
             EmbedFooter(data["footer"]) if "footer" in data else None
         )
+        self.data: dict = data
 
 
 class Bot:
