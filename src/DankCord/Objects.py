@@ -63,8 +63,8 @@ class Message:
             raise e
 
     def fetch_button(self, label: str):
-        returned_button = None
-        returned_button = [i for i in self.buttons if label == i.label][0]
+        returned_button = [i for i in self.buttons if label == i.label]
+        returned_button = returned_button[0] if len(returned_button) > 0 else None
         return returned_button
 
 class Author:
