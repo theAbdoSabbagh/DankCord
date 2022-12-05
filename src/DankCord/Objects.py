@@ -64,12 +64,8 @@ class Message:
 
     def fetch_button(self, label: str):
         returned_button = None
-        for i in self.buttons:
-          if i.label == label:
-            returned_button = i
-            break
+        returned_button = [i for i in self.buttons if label == i.label][0]
         return returned_button
-
 
 class Author:
     def __init__(self, data: dict) -> None:
