@@ -20,8 +20,8 @@ class Response:
         self.headers = response[6]
 class Author:
     def __init__(self, data: dict) -> None:
-        self.name: str = data.get("name", "")
-        self.icon_url = data.get("icon_url", "")
+        self.name: str = data.get("name", None)
+        self.icon_url = data.get("icon_url", None)
 
 
 class ActionRow:
@@ -35,7 +35,7 @@ class DropdownOption:
     def __init__(self, data: dict) -> None:
         self.label: str = data["label"]
         self.default: bool = data.get("default", False)
-        self.value: str = data.get("value", "")
+        self.value: str = data.get("value", None)
 
 
 class Dropdown:
@@ -51,7 +51,7 @@ class Button:
         self.type = 2
         self.emoji: Optional[Emoji] = Emoji(
             data["emoji"]) if "emoji" in data.keys() else None
-        self.label: str = data.get("label", "")
+        self.label: str = data.get("label", None)
         self.disabled: bool = data.get("disabled", False)
         self.custom_id: str = data.get("custom_id", "")
 class Emoji:

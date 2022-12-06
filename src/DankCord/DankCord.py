@@ -1,6 +1,7 @@
 import datetime
 import json
 import time
+import traceback
 from string import printable
 from threading import Thread
 from typing import Optional, Literal, Union
@@ -109,8 +110,6 @@ class Client:
             except Exception as e:
                 self.logger.error(
                     f"Unhandled error during event listening: {e}")
-                import traceback
-
                 traceback.print_exc()
 
     def _OptionsBuilder(self, name, type_, **kwargs):

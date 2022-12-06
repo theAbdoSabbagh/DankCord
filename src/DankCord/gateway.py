@@ -1,6 +1,7 @@
 import random
 import threading
 import time
+import traceback
 from typing import Optional
 
 import orjson
@@ -87,8 +88,6 @@ class Gateway:
             except Exception as e:
                 self.logger.error(
                     f"Unhandled error during fetching guild id: {e}")
-                import traceback
-
                 traceback.print_exc()
 
         self.user_id = int(identify_json["d"]["user"]["id"])
