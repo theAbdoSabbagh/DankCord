@@ -1,8 +1,6 @@
 from typing import Optional
 
 import orjson as json
-import time
-import faster_than_requests as requests
 
 
 class Response:
@@ -20,53 +18,6 @@ class Response:
         self.format = response[1]
         self.code = int(response[2].split(" ")[0])
         self.headers = response[6]
-
-
-class Message:
-    def __init__(self, data: dict) -> None:
-        self.data: dict = data
-        self.content: str = data["content"]
-        self.id: int = data["id"]
-        try:
-            embed_list = data["embeds"]
-            embed_objects = []
-            self.embeds: list = []
-            for i in embed_list:
-                embed_objects.append(Embed(i))
-            self.embeds = embed_objects
-        except Exception as e:
-            self.embeds = []
-            raise e
-        self.channel: int = int(data["channel_id"])
-        self.timestamp: int = data["timestamp"]
-        try:
-            self.components: list = []
-            self.buttons: list = []
-            self.dropdowns: list = []
-            actionrows = data["components"]
-            actionrow_objects = []
-            for i in actionrows:
-                actionrow_objects.append(ActionRow(i, self.id))
-            self.components = actionrow_objects
-            button_objects = []
-            dropdown_objects = []
-            for i in self.components:
-              for i2 in i.components:
-                if isinstance(i2, Button):
-                  button_objects.append(i2)
-                if isinstance(i2, Dropdown):
-                  dropdown_objects.append(i2)
-            self.buttons = button_objects
-            self.dropdowns = dropdown_objects
-        except Exception as e:
-            self.components: list = []
-            raise e
-
-    def fetch_button(self, label: str):
-        returned_button = [i for i in self.buttons if label == i.label]
-        returned_button = returned_button[0] if len(returned_button) > 0 else None
-        return returned_button
-
 class Author:
     def __init__(self, data: dict) -> None:
         self.name: str = data.get("name", "")
@@ -128,6 +79,50 @@ class Embed:
         )
         self.data: dict = data
 
+class Message:
+    def __init__(self, data: dict) -> None:
+        self.data: dict = data
+        self.content: str = data["content"]
+        self.id: int = data["id"]
+        try:
+            embed_list = data["embeds"]
+            embed_objects = []
+            self.embeds: list = []
+            for i in embed_list:
+                embed_objects.append(Embed(i))
+            self.embeds = embed_objects
+        except Exception as e:
+            self.embeds = []
+            raise e
+        self.channel: int = int(data["channel_id"])
+        self.timestamp: int = data["timestamp"]
+        try:
+            self.components: list = []
+            self.buttons: list = []
+            self.dropdowns: list = []
+            actionrows = data["components"]
+            actionrow_objects = []
+            for i in actionrows:
+                actionrow_objects.append(ActionRow(i, self.id))
+            self.components = actionrow_objects
+            button_objects = []
+            dropdown_objects = []
+            for i in self.components:
+              for i2 in i.components:
+                if isinstance(i2, Button):
+                  button_objects.append(i2)
+                if isinstance(i2, Dropdown):
+                  dropdown_objects.append(i2)
+            self.buttons = button_objects
+            self.dropdowns = dropdown_objects
+        except Exception as e:
+            self.components: list = []
+            raise e
+
+    def fetch_button(self, label: str) -> Optional[Button]:
+        returned_button = [i for i in self.buttons if label == i.label]
+        returned_button = returned_button[0] if len(returned_button) > 0 else None
+        return returned_button
 
 class Bot:
     def __init__(self, data: dict) -> None:

@@ -3,7 +3,7 @@ import json
 import time
 from string import printable
 from threading import Thread
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 
 import faster_than_requests as requests
 import orjson
@@ -308,7 +308,7 @@ class Client:
 
         return Message(_message)
     
-    def click(self, button: Button, retry_attempts: int=10, timeout: int=10):
+    def click(self, button: Button, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
         nonce = self._create_nonce()
         data = {
             "type": 3,
