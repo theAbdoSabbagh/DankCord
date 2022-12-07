@@ -58,8 +58,8 @@ class Button:
         self.custom_id: str = data.get("custom_id", "")
 class Emoji:
     def __init__(self, data: dict) -> None:
-        self.name: str = data["name"]
-        self.id: int = data["id"]
+        self.name: str = data.get("name", None)
+        self.id: int = data.get("id", None)
 
 
 class EmbedFooter:

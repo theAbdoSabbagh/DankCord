@@ -304,6 +304,9 @@ class Client:
                         if value["id"].strip() == message_id.strip() and event in event_type:
                             _message = value
                             return Message(_message)
+                        if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
+                            _message = value
+                            return Message(_message)
                     except Exception as e:
                         pass
                 if not _message:
