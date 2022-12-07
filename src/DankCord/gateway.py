@@ -1,6 +1,7 @@
 import random
 import threading
 import time
+import traceback
 from typing import Optional
 
 import orjson
@@ -79,10 +80,15 @@ class Gateway:
         identify_json = orjson.loads(identify)
 
         for guild in identify_json["d"]["guilds"]:
-            for channel in guild["channels"]:
-                if channel["id"] == self.channel_id:
-                    self.guild_id = guild["id"]
-                    break
+            try:
+                for channel in guild["channels"]:
+                    if channel["id"] == self.channel_id:
+                        self.guild_id = guild["id"]
+                        break
+            except Exception as e:
+                self.logger.error(
+                    f"Unhandled error during fetching guild id: {e}")
+                traceback.print_exc()
 
         self.user_id = int(identify_json["d"]["user"]["id"])
         self.session_id = identify_json["d"]["session_id"]

@@ -5,6 +5,8 @@ class DankCordException(BaseException):
 class InvalidCommand(DankCordException):
     pass
 
+class InvalidComponent(DankCordException):
+    pass
 
 class InvalidToken(DankCordException):
     pass

@@ -1,19 +1,20 @@
 import datetime
 import json
 import time
+import traceback
 from string import printable
 from threading import Thread
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 
 import faster_than_requests as requests
 import orjson
 from rich import print
 
 from .DankMemer import DankMemer
-from .exceptions import UnknownChannel
+from .exceptions import UnknownChannel, InvalidComponent
 from .gateway import Gateway
 from .logger import Logger
-from .Objects import Message, Response
+from .Objects import Message, Response, Button, Dropdown
 
 
 class Client:
@@ -92,23 +93,23 @@ class Client:
             if not event or not event["d"] or not event["t"]:
                 continue
             try:
-                if "channel_id" not in event["d"] or "nonce" not in event["d"]:
+                if "channel_id" not in event["d"]:
                     continue
                 if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE"):
                     continue
-
                 if (
                     event["d"]["channel_id"] == self.channel_id
                     or event["d"]["channel_id"] == "270904126974590976"
                 ):
-                    if event["d"]["nonce"] not in self.ws_cache:
-                        self.ws_cache[event["d"]["nonce"]] = {}
-                    self.ws_cache[event["d"]["nonce"]][event["t"]] = event["d"]
-
+                    if not "nonce" in event["d"].keys():
+                        self.ws_cache[event["d"]["id"] + " " + event["t"]] = event["d"]
+                    else:
+                        if not event["d"]["nonce"] in self.ws_cache:
+                            self.ws_cache[event["d"]["nonce"]] = {}
+                        self.ws_cache[event["d"]["nonce"]][event["t"]] = event["d"]
             except Exception as e:
-                self.logger.error(f"Unhandled error during event listening: {e}")
-                import traceback
-
+                self.logger.error(
+                    f"Unhandled error during event listening: {e}")
                 traceback.print_exc()
 
     def _OptionsBuilder(self, name, type_, **kwargs):
@@ -119,7 +120,8 @@ class Client:
         option_type = 3
         for key, value in kwargs.items():
             option_type = type_types[type(value)]
-            new_piece_of_data = {"type": option_type, "name": key, "value": value}
+            new_piece_of_data = {"type": option_type,
+                                 "name": key, "value": value}
             options[0]["options"].append(new_piece_of_data)
 
         return options
@@ -181,9 +183,8 @@ class Client:
                     ),
                 )
             )
-
-            post_handling = self._post_command_handling(
-                timeout, response, name, nonce, "MESSAGE_CREATE"
+            post_handling = self._post_handling(
+                timeout, response, name, nonce, ["MESSAGE_CREATE"]
             )
             if post_handling:
                 return post_handling
@@ -250,21 +251,21 @@ class Client:
                     ],
                 )
             )
-
-            post_handling = self._post_command_handling(
-                timeout, response, name, nonce, "MESSAGE_CREATE"
+            post_handling = self._post_handling(
+                timeout, response, name, nonce, ["MESSAGE_CREATE"]
             )
             if post_handling:
                 return post_handling
             continue
 
-    def _post_command_handling(
+    def _post_handling(
         self,
         timeout: int,
         response: Response,
         name: str,
         nonce: str,
-        event_type: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE"],
+        event_type: list,
+        message_id: str = ""
     ) -> Optional[Message]:
         lim = time.time() + timeout
         _message = None
@@ -272,7 +273,11 @@ class Client:
 
         if isinstance(response.data, dict):
             retry_after = int(response.data.get("retry_after", 0))
-            self.logger.ratelimit(retry_after=retry_after, command_name=name)
+            if "errors" in response.data.keys():
+                if response.data["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
+                    raise InvalidComponent("Invalid component.")
+            self.logger.ratelimit(
+                retry_after=retry_after, command_name=name)
             time.sleep(retry_after)
             return None
         elif not response.data:
@@ -286,12 +291,102 @@ class Client:
 
         while time.time() < lim:
             if nonce in self.ws_cache:
-                if event_type in self.ws_cache[nonce]:
-                    _message = self.ws_cache[nonce][event_type]
-                    break
+                for i in event_type:
+                    if i in self.ws_cache[nonce]:
+                        _message = self.ws_cache[nonce][i]
+                        break
 
         if not _message:
-            self.logger.error("Did not receive message nonce in time.")
-            return None
-
+            if message_id != "":
+                for key, value in self.ws_cache.items():
+                    try:
+                        event = key.split(" ")[1]
+                        if value["id"].strip() == message_id.strip() and event in event_type:
+                            _message = value
+                            return Message(_message)
+                        if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
+                            _message = value
+                            return Message(_message)
+                    except Exception as e:
+                        pass
+                if not _message:
+                    self.logger.error("Did not receive nonce in time.")
+                return None
+            else:
+                self.logger.error("Did not receive nonce in time.")
+                return None
         return Message(_message)
+    
+    def click(self, button: Button, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
+        nonce = self._create_nonce()
+        data = {
+            "type": 3,
+            "nonce": nonce,
+            "guild_id": self.guild_id,
+            "channel_id": self.channel_id,
+            "message_flags": 0,
+            "message_id": button.message_id,
+            "application_id": "270904126974590976",
+            "session_id": self.session_id,
+            "data": {
+                "component_type": 2,
+                "custom_id": button.custom_id
+            }
+        }
+        for i in range(retry_attempts):
+            response = Response(
+                requests.post(  # type: ignore
+                    "https://discord.com/api/v9/interactions",
+                    orjson.dumps(data),
+                    http_headers=self._tupalize(
+                        {
+                            "Authorization": self.token,
+                            "Content-Type": "application/json",
+                        }
+                    ),
+                )
+            )
+            post_handling = self._post_handling(
+                timeout, response, "button interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=button.message_id
+            )
+            if post_handling:
+                return post_handling
+            continue
+    
+    def select(self, dropdown: Dropdown, options: list, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
+        nonce = self._create_nonce()
+        data = {
+            "type": 3,
+            "nonce": nonce,
+            "guild_id": self.guild_id,
+            "channel_id": self.channel_id,
+            "message_flags": 0,
+            "message_id": dropdown.message_id,
+            "application_id": "270904126974590976",
+            "session_id": self.session_id,
+            "data": {
+                "component_type": 3,
+                "custom_id": dropdown.custom_id,
+                "type": 3,
+                "values": options
+            }
+        }
+        for i in range(retry_attempts):
+            response = Response(
+                requests.post(  # type: ignore
+                    "https://discord.com/api/v9/interactions",
+                    orjson.dumps(data),
+                    http_headers=self._tupalize(
+                        {
+                            "Authorization": self.token,
+                            "Content-Type": "application/json",
+                        }
+                    ),
+                )
+            )
+            post_handling = self._post_handling(
+                timeout, response, "dropdown interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=dropdown.message_id
+            )
+            if post_handling:
+                return post_handling
+            continue
