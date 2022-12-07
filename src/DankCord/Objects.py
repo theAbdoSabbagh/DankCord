@@ -27,7 +27,7 @@ class Author:
 class ActionRow:
     def __init__(self, data: dict, message_id: str):
         self.components = [
-            Button(i, message_id) if i["type"] == 2 else Dropdown(i) for i in data["components"]
+            Button(i, message_id) if i["type"] == 2 else Dropdown(i, message_id) for i in data["components"]
         ]
 
 
@@ -39,8 +39,10 @@ class DropdownOption:
 
 
 class Dropdown:
-    def __init__(self, data: dict) -> None:
+    def __init__(self, data: dict, message_id: str) -> None:
+        self.message_id = message_id
         self.type = 3
+        self.custom_id = data["custom_id"]
         self.options = [DropdownOption(child) for child in data["options"]]
     # TODO: Make a choose function
 

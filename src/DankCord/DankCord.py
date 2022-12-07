@@ -11,10 +11,10 @@ import orjson
 from rich import print
 
 from .DankMemer import DankMemer
-from .exceptions import UnknownChannel
+from .exceptions import UnknownChannel, InvalidComponent
 from .gateway import Gateway
 from .logger import Logger
-from .Objects import Message, Response, Button
+from .Objects import Message, Response, Button, Dropdown
 
 
 class Client:
@@ -102,7 +102,7 @@ class Client:
                     or event["d"]["channel_id"] == "270904126974590976"
                 ):
                     if not "nonce" in event["d"].keys():
-                        self.ws_cache[event["d"]["id"]] = event["d"]
+                        self.ws_cache[event["d"]["id"] + " " + event["t"]] = event["d"]
                     else:
                         if not event["d"]["nonce"] in self.ws_cache:
                             self.ws_cache[event["d"]["nonce"]] = {}
@@ -273,6 +273,9 @@ class Client:
 
         if isinstance(response.data, dict):
             retry_after = int(response.data.get("retry_after", 0))
+            if "errors" in response.data.keys():
+                if response.data["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
+                    raise InvalidComponent("Invalid component.")
             self.logger.ratelimit(
                 retry_after=retry_after, command_name=name)
             time.sleep(retry_after)
@@ -297,14 +300,18 @@ class Client:
             if message_id != "":
                 for key, value in self.ws_cache.items():
                     try:
-                        if value["id"].strip() == message_id.strip():
+                        event = key.split(" ")[1]
+                        if value["id"].strip() == message_id.strip() and event in event_type:
                             _message = value
+                            return Message(_message)
                     except Exception as e:
                         pass
+                if not _message:
+                    self.logger.error("Did not receive nonce in time.")
+                return None
             else:
                 self.logger.error("Did not receive nonce in time.")
                 return None
-
         return Message(_message)
     
     def click(self, button: Button, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
@@ -313,11 +320,11 @@ class Client:
             "type": 3,
             "nonce": nonce,
             "guild_id": self.guild_id,
-            "session_id": self.session_id,
             "channel_id": self.channel_id,
             "message_flags": 0,
             "message_id": button.message_id,
             "application_id": "270904126974590976",
+            "session_id": self.session_id,
             "data": {
                 "component_type": 2,
                 "custom_id": button.custom_id
@@ -338,6 +345,44 @@ class Client:
             )
             post_handling = self._post_handling(
                 timeout, response, "button interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=button.message_id
+            )
+            if post_handling:
+                return post_handling
+            continue
+    
+    def select(self, dropdown: Dropdown, options: list, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
+        nonce = self._create_nonce()
+        data = {
+            "type": 3,
+            "nonce": nonce,
+            "guild_id": self.guild_id,
+            "channel_id": self.channel_id,
+            "message_flags": 0,
+            "message_id": dropdown.message_id,
+            "application_id": "270904126974590976",
+            "session_id": self.session_id,
+            "data": {
+                "component_type": 3,
+                "custom_id": dropdown.custom_id,
+                "type": 3,
+                "values": options
+            }
+        }
+        for i in range(retry_attempts):
+            response = Response(
+                requests.post(  # type: ignore
+                    "https://discord.com/api/v9/interactions",
+                    orjson.dumps(data),
+                    http_headers=self._tupalize(
+                        {
+                            "Authorization": self.token,
+                            "Content-Type": "application/json",
+                        }
+                    ),
+                )
+            )
+            post_handling = self._post_handling(
+                timeout, response, "dropdown interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=dropdown.message_id
             )
             if post_handling:
                 return post_handling
