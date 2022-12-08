@@ -289,32 +289,33 @@ class Client:
             print(response.data)
             print("------- DEBUG END -------")
 
-        if not message_id != "":
+        if message_id == "":
             while time.time() < lim:
                 if nonce in self.ws_cache:
                     for i in event_type:
                         if i in self.ws_cache[nonce]:
                             _message = self.ws_cache[nonce][i]
-                            break
-            return Message(_message)
-        
+                            return Message(_message)
+        if not _message and message_id == "":
+            self.logger.error("Did not receive nonce in time.")
+            return None
+
         if message_id != "":
-            for key, value in self.ws_cache.items():
-                try:
-                    event = key.split(" ")[1]
-                    if value["id"].strip() == message_id.strip() and event in event_type:
-                        _message = value
-                        return Message(_message)
-                    if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
-                        _message = value
-                        return Message(_message)
-                except Exception as e:
-                    pass
+            lim = time.time() + timeout
+            while time.time() < lim:
+                for key, value in self.ws_cache.items():
+                    try:
+                        event = key.split(" ")[1]
+                        if value["id"].strip() == message_id.strip() and event in event_type:
+                            _message = value
+                            return Message(_message)
+                        if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
+                            _message = value
+                            return Message(_message)
+                    except Exception as e:
+                        pass
             if not _message:
                 self.logger.error("Did not receive nonce in time.")
-            return None
-        else:
-            self.logger.error("Did not receive nonce in time.")
             return None
     
     def click(self, button: Button, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
