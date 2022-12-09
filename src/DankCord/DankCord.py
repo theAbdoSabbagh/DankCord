@@ -289,33 +289,37 @@ class Client:
             print(response.data)
             print("------- DEBUG END -------")
 
-        while time.time() < lim:
-            if nonce in self.ws_cache:
-                for i in event_type:
-                    if i in self.ws_cache[nonce]:
-                        _message = self.ws_cache[nonce][i]
-                        break
+        if message_id == "":
+            while time.time() < lim:
+                if nonce in self.ws_cache:
+                    for i in event_type:
+                        if i in self.ws_cache[nonce]:
+                            _message = self.ws_cache[nonce][i]
+                            return Message(_message)
+        if not _message and message_id == "":
+            self.logger.error("Did not receive nonce in time.")
+            return None
 
-        if not _message:
-            if message_id != "":
-                for key, value in self.ws_cache.items():
-                    try:
-                        event = key.split(" ")[1]
-                        if value["id"].strip() == message_id.strip() and event in event_type:
-                            _message = value
-                            return Message(_message)
-                        if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
-                            _message = value
-                            return Message(_message)
-                    except Exception as e:
-                        pass
-                if not _message:
-                    self.logger.error("Did not receive nonce in time.")
-                return None
-            else:
+        if message_id != "":
+            lim = time.time() + timeout
+            while time.time() < lim:
+                try:
+                    for key, value in self.ws_cache.items():
+                        try:
+                            event = key.split(" ")[1]
+                            if value["id"].strip() == message_id.strip() and event in event_type:
+                                _message = value
+                                return Message(_message)
+                            if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
+                                _message = value
+                                return Message(_message)
+                        except Exception as e:
+                            pass
+                except:
+                    pass
+            if not _message:
                 self.logger.error("Did not receive nonce in time.")
-                return None
-        return Message(_message)
+            return None
     
     def click(self, button: Button, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
         nonce = self._create_nonce()
