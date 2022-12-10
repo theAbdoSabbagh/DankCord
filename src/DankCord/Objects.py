@@ -7,7 +7,6 @@ class Response:
     faster_than_requests returns: [body, type, status, version, url, length, headers]
     which is passed as param `response`
     """
-
     def __init__(self, response: list) -> None:
         try:
             self.data: dict = json.loads(response[0])
@@ -115,6 +114,9 @@ class Message:
         self.dropdowns: list = [item for component in self.components for item in component.components if isinstance(item, Dropdown)]
 
 class Bot:
+    """
+    Represents the bot account.
+    """
     def __init__(self, data: dict) -> None:
         self.username: str = data["d"]["user"]["username"]
         self.id: int = int(data["d"]["user"]["id"])
