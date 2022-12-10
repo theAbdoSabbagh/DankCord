@@ -11,6 +11,5 @@ class InvalidComponent(DankCordException):
 class InvalidToken(DankCordException):
     pass
 
-
 class UnknownChannel(DankCordException):
     pass
