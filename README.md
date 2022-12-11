@@ -1,8 +1,8 @@
 ![DankCord](assets/DankCord.png "DankCord")
 
 [![Discord Server](https://discord.com/api/guilds/1046759026807013376/embed.png)](https://discord.gg/XaQ6FAP3sm/)
-[![PyPi version](https://img.shields.io/pypi/v/DankCord.svg)](https://pypi.python.org/pypi/Sxvxge/)
-[![PyPI download month](https://img.shields.io/pypi/dm/DankCord.svg)](https://pypi.python.org/pypi/Sxvxge/)
+[![PyPi version](https://img.shields.io/pypi/v/DankCord.svg)](https://pypi.org/user/Sxvxge/)
+[![PyPI download month](https://img.shields.io/pypi/dm/DankCord.svg)](https://pypi.org/user/Sxvxge/)
 
 # DankCord - The first python library for Dank Memer selfbots!
 My vision for this library is to be able to help people create their very own selfbots related to Dank Memer, and even create autofarms based on this library, instead of having to use other libraries such as `discord.py-self` as others can be slow, use lots of memory, and the user would have to code many things on their own from scratch.
