@@ -2,7 +2,7 @@ from typing import Union
 
 import faster_than_requests as requests
 
-from .Objects import Response
+from .Objects import Config, Response
 
 
 class PepeCaptcha:
@@ -16,8 +16,8 @@ class EmojiCaptcha:
 
 
 class DankMemer:
-    def __init__(self, token: str) -> None:
-        self.token = token
+    def __init__(self, config: Config) -> None:
+        self.token = config.token
 
         self.emoji_ids = [
             819014822867894304,
