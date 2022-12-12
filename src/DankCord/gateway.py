@@ -3,12 +3,11 @@ import time
 from typing import Optional
 
 import orjson
+from pyloggor import pyloggor
 from websocket import create_connection
-import threading
 
 from .exceptions import InvalidToken
-from .Objects import Config, Cache
-from pyloggor import pyloggor
+from .Objects import Cache, Config
 
 
 class GatewayInternal:

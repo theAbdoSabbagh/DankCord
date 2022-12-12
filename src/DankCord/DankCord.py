@@ -6,12 +6,12 @@ from typing import Optional
 
 import faster_than_requests as requests
 import orjson
+from pyloggor import pyloggor
 
 from .DankMemer import DankMemer
-from .exceptions import InvalidComponent, NonceTimeout, UnknownChannel, NoCommands
+from .exceptions import InvalidComponent, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
 from .Objects import Button, Config, Dropdown, Message, Response
-from pyloggor import pyloggor
 
 
 class Client:

@@ -1,4 +1,5 @@
-from typing import Optional, Literal
+from typing import Literal, Optional
+
 import orjson
 
 
