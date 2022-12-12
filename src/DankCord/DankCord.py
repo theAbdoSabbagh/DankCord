@@ -137,7 +137,7 @@ class Client:
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
-        retry_attempts = retry_attempts if retry_attempts else 1
+        retry_attempts = retry_attempts if retry_attempts > 0 else 1
 
         data = {
             "type": 2,
@@ -200,7 +200,7 @@ class Client:
 
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
-        retry_attempts = retry_attempts if retry_attempts else 1
+        retry_attempts = retry_attempts if retry_attempts > 0 else 1
         type_ = 1
 
         for item in command_info["options"]:
