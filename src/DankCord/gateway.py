@@ -44,7 +44,6 @@ class Gateway:
 
         jitter_heartbeat = self.heartbeat_interval * random.uniform(0, 0.1)
 
-        time.sleep(jitter_heartbeat)
         ws.send(orjson.dumps({"op": 1, "d": None}))
         response = orjson.loads(ws.recv())
 
@@ -82,7 +81,7 @@ class Gateway:
         for guild in identify_json["d"]["guilds"]:
             try:
                 for channel in guild["channels"]:
-                    if channel["id"] == self.channel_id:
+                    if int(channel["id"]) == int(self.channel_id):
                         self.guild_id = guild["id"]
                         break
             except Exception as e:
