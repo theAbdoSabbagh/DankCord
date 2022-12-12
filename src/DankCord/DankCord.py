@@ -36,15 +36,14 @@ class Client:
         self.dankmemer = DankMemer(self.token)
         self._get_commands()
 
-        t1 = Thread(target=self._events_listener)
-        t1.daemon = True
-        t1.start()
+        listener = Thread(target=self._events_listener, daemon=True)
+        listener.start()
 
     def _strip(self, content: str) -> str:
         return "".join([char for char in content if char in printable])
 
     def _tupalize(self, dict):
-        return [(a, b) for a, b in dict.items()]
+        return list(dict.items())
 
     def _create_nonce(self) -> str:
         return str(
@@ -138,7 +137,7 @@ class Client:
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
-        retry_attempts = retry_attempts if retry_attempts > 0 else 1
+        retry_attempts = retry_attempts if retry_attempts else 1
 
         data = {
             "type": 2,
@@ -201,7 +200,7 @@ class Client:
 
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
-        retry_attempts = retry_attempts if retry_attempts > 0 else 1
+        retry_attempts = retry_attempts if retry_attempts else 1
         type_ = 1
 
         for item in command_info["options"]:
@@ -300,7 +299,7 @@ class Client:
             self.logger.error("Did not receive nonce in time.")
             return None
 
-        if message_id != "":
+        if message_id:
             lim = time.time() + timeout
             while time.time() < lim:
                 try:
