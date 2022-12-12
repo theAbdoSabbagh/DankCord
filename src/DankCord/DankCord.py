@@ -286,14 +286,10 @@ class Client:
         for item in command_info["options"]:
             if item["name"] == sub_name:
                 sub_type = item["type"]
-            print(type(item), item["options"], type(item["options"]))
             for item_ in item["options"]:
                 if item_["name"] == sub_group_name:
                     sub_group_type = item_["type"]
 
-        # TODO ADD TYPE FOR BOTH SUB COMMAND AND GROUP SUB COMMAND
-        # TODO TRY WITH THE DATA U SENT ON DISCORD, JUST CHANGE SESSION ID
-        print(self.channel_id, self.guild_id)
         data = {
             "type": 2,
             "application_id": "270904126974590976",
@@ -368,7 +364,6 @@ class Client:
         _message = None
 
         if isinstance(response.data, dict):
-            print(response.data)
             retry_after = int(response.data.get("retry_after", 0))
             errors = response.data.get("errors")
             code = response.data.get("code")
