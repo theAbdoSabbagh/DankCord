@@ -1,58 +1,59 @@
 import datetime
 import json
 import time
-import orjson
-import faster_than_requests as requests
-
 from string import printable
-from threading import Thread
 from typing import Optional
-from rich import print
+
+import faster_than_requests as requests
+import orjson
+from pyloggor import pyloggor
 
 from .DankMemer import DankMemer
-from .exceptions import NonceTimeout, UnknownChannel, InvalidComponent
+from .exceptions import InvalidComponent, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
-from .logger import Logger
-from .Objects import Message, Response, Button, Dropdown
+from .Objects import Button, Config, Dropdown, Message, Response
 
 
 class Client:
-    def __init__(self, token: str, channel_id: str):
-        self.token = token
-        self.channel_id: str = channel_id
+    def __init__(self, config: Config, logger: pyloggor):
+        __boot_start = time.perf_counter()
+        logger.log(level="Info", msg="Booting up DankCord client.")
+        self.token = config.token
+        self.logger = logger
 
-        self.logger = Logger()
+        self.channel_id: str = config.channel_id
+        self.dm_mode = config.dm_mode
 
-        self.gateway = Gateway(self.token, self.channel_id, self.logger)
+        self.resource_intensivity = config.resource_intensivity
+        self.commands_data = {}
+
+        self.gateway = Gateway(config, self.logger)
+        if not self.gateway:
+            raise ConnectionError("Failed to connect to gateway.")
 
         self.ws = self.gateway.ws
-        self.session_id: Optional[str] = self.gateway.session_id
-        self.user_id: Optional[int] = self.gateway.user_id
-        self.guild_id = self.gateway.guild_id
+        self.session_id: str = self.gateway.session_id
 
-        self.ws_cache = {}
+        self.user_id: int = self.gateway.user_id
+        if not config.dm_mode:
+            self.guild_id = self.gateway.guild_id
 
-        self.dankmemer = DankMemer(self.token)
+        self.dankmemer = DankMemer(config)
         self._get_commands()
+        self._get_info()
 
-        t1 = Thread(target=self._events_listener)
-        t1.daemon = True
-        t1.start()
+        logger.log(
+            level="Info", msg=f"Fully booted up, it took total {round(time.perf_counter() - __boot_start, 3)} seconds."
+        )
 
-    def _strip(self, content: str) -> str:
+    def _clean(self, content: str) -> str:
         return "".join([char for char in content if char in printable])
 
     def _tupalize(self, dict):
         return [(a, b) for a, b in dict.items()]
 
     def _create_nonce(self) -> str:
-        return str(
-            int(
-                datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000
-                - 1420070400000
-            )
-            << 22
-        )
+        return str(int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000 - 1420070400000) << 22)
 
     def _get_commands(self, channel_id: Optional[str] = None) -> Optional[Response]:
         channel_id = channel_id or self.channel_id
@@ -65,46 +66,28 @@ class Client:
             raise UnknownChannel("Bot doesn't have access to this channel.")
 
         if "application_commands" not in response.data:
-            return response
+            raise NoCommands("No commands found.")
 
-        with open(f"{self.channel_id}_commands.json", "w") as f:
-            json.dump(
-                {
-                    command_data["name"]: command_data
-                    for command_data in response.data["application_commands"]
-                },
-                f,
-                indent=4,
-                sort_keys=True,
-            )
+        if self.resource_intensivity == "MEM":
+            self.commands_data = {
+                command_data["name"]: command_data for command_data in response.data["application_commands"]
+            }
+        else:
+            with open(f"{self.channel_id}_commands.json", "w") as f:
+                json.dump(
+                    {command_data["name"]: command_data for command_data in response.data["application_commands"]},
+                    f,
+                    indent=4,
+                    sort_keys=True,
+                )
 
         return response
 
     def _get_command_info(self, name: str) -> dict:
-        return json.load(open(f"{self.channel_id}_commands.json")).get(name, {})
-
-    def _events_listener(self):
-        while True:
-            m = self.ws.recv()
-            if not m:
-                continue
-            event = orjson.loads(m)
-            if not event or not event["d"] or not event["t"]:
-                continue
-            if "channel_id" not in event["d"]:
-                continue
-            if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE"):
-                continue
-            if (
-                event["d"]["channel_id"] == self.channel_id
-                or event["d"]["channel_id"] == "270904126974590976"
-            ):
-                if not "nonce" in event["d"].keys():
-                    self.ws_cache[event["d"]["id"] + " " + event["t"]] = event["d"]
-                else:
-                    if not event["d"]["nonce"] in self.ws_cache:
-                        self.ws_cache[event["d"]["nonce"]] = {}
-                    self.ws_cache[event["d"]["nonce"]][event["t"]] = event["d"]
+        if self.resource_intensivity == "MEM":
+            return self.commands_data.get(name, {})
+        else:
+            return json.load(open(f"{self.channel_id}_commands.json")).get(name, {})
 
     def _OptionsBuilder(self, name, type_, **kwargs):
         options = [{"type": type_, "name": name, "options": []}]
@@ -114,8 +97,7 @@ class Client:
         option_type = 3
         for key, value in kwargs.items():
             option_type = type_types[type(value)]
-            new_piece_of_data = {"type": option_type,
-                                 "name": key, "value": value}
+            new_piece_of_data = {"type": option_type, "name": key, "value": value}
             options[0]["options"].append(new_piece_of_data)
 
         return options
@@ -128,19 +110,21 @@ class Client:
         option_type = 3
         for key, value in kwargs.items():
             option_type = type_types[type(value)]
-            new_piece_of_data = {"type": option_type,
-                                 "name": key, "value": value}
+            new_piece_of_data = {"type": option_type, "name": key, "value": value}
             options.append(new_piece_of_data)
 
         return options
 
-    def get_info(self) -> Response:
-        return Response(
+    def _get_info(self) -> None:
+        resp = Response(
             requests.get(  # type: ignore
                 url="https://discord.com/api/v10/users/@me",
                 http_headers=self._tupalize({"Authorization": self.token}),
             )
         )
+        if resp.code != 200:
+            raise Exception("Failed to get user info.")
+        self.username = resp.data["username"]
 
     def run_command(self, name: str, retry_attempts=3, timeout: int = 10):
         nonce = self._create_nonce()
@@ -165,9 +149,7 @@ class Client:
                     "application_id": "270904126974590976",
                     "version": command_info["version"],
                     "default_permission": command_info["default_permission"],
-                    "default_member_permissions": command_info[
-                        "default_member_permissions"
-                    ],
+                    "default_member_permissions": command_info["default_member_permissions"],
                     "type": 1,
                     "name": name,
                     "nsfw": command_info["nsfw"],
@@ -192,9 +174,7 @@ class Client:
                     ),
                 )
             )
-            post_handling = self._post_handling(
-                timeout, response, name, nonce, ["MESSAGE_CREATE"]
-            )
+            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
             if post_handling:
                 return post_handling
             continue
@@ -235,9 +215,7 @@ class Client:
                     "application_id": "270904126974590976",
                     "version": command_info["version"],
                     "default_permission": command_info["default_permission"],
-                    "default_member_permissions": command_info[
-                        "default_member_permissions"
-                    ],
+                    "default_member_permissions": command_info["default_member_permissions"],
                     "type": command_info["type"],
                     "name": name,
                     "nsfw": command_info["nsfw"],
@@ -261,9 +239,7 @@ class Client:
                     ],
                 )
             )
-            post_handling = self._post_handling(
-                timeout, response, name, nonce, ["MESSAGE_CREATE"]
-            )
+            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
             if post_handling:
                 return post_handling
             continue
@@ -311,7 +287,7 @@ class Client:
                                 "name": sub_group_name,
                                 "options": self._RawOptionsBuilder(**kwargs),
                             }
-                        ]
+                        ],
                     }
                 ],
                 "application_command": {
@@ -319,9 +295,7 @@ class Client:
                     "application_id": "270904126974590976",
                     "version": command_info["version"],
                     "default_permission": command_info["default_permission"],
-                    "default_member_permissions": command_info[
-                        "default_member_permissions"
-                    ],
+                    "default_member_permissions": command_info["default_member_permissions"],
                     "type": command_info["type"],
                     "name": name,
                     "nsfw": command_info["nsfw"],
@@ -345,9 +319,7 @@ class Client:
                     ],
                 )
             )
-            post_handling = self._post_handling(
-                timeout, response, name, nonce, ["MESSAGE_CREATE"]
-            )
+            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
             if post_handling:
                 return post_handling
             continue
@@ -359,7 +331,7 @@ class Client:
         name: str,
         nonce: str,
         event_type: list,
-        message_id: str = ""
+        message_id: str = "",
     ) -> Optional[Message]:
         _message = None
 
@@ -372,11 +344,10 @@ class Client:
                 if response.data["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
                     raise InvalidComponent("Invalid component.")
                 if retry_after > 0:
-                    self.logger.ratelimit(
-                        retry_after=retry_after, command_name=name)
+                    self.logger.log("Warning", msg=f"Ratelimited while running {name}, retrying after {retry_after}")
                     time.sleep(retry_after)
 
-                return None 
+                return None
             if code == 10003:
                 raise UnknownChannel("Bot doesn't have access to this channel.")
 
@@ -401,7 +372,11 @@ class Client:
                         if value["id"].strip() == message_id.strip() and event in event_type:
                             _message = value
                             return Message(_message)
-                        if value["message_reference"]["message_id"].strip() == message_id.strip and value["type"] == 19 and event in event_type:
+                        if (
+                            value["message_reference"]["message_id"].strip() == message_id.strip
+                            and value["type"] == 19
+                            and event in event_type
+                        ):
                             _message = value
                             return Message(_message)
                     except Exception as e:
@@ -413,8 +388,8 @@ class Client:
             raise NonceTimeout("Did not receive nonce in time.")
 
         return None
-    
-    def click(self, button: Button, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
+
+    def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> Optional[Message]:
         nonce = self._create_nonce()
         data = {
             "type": 3,
@@ -425,10 +400,7 @@ class Client:
             "message_id": button.message_id,
             "application_id": "270904126974590976",
             "session_id": self.session_id,
-            "data": {
-                "component_type": 2,
-                "custom_id": button.custom_id
-            }
+            "data": {"component_type": 2, "custom_id": button.custom_id},
         }
         for i in range(retry_attempts):
             response = Response(
@@ -444,13 +416,24 @@ class Client:
                 )
             )
             post_handling = self._post_handling(
-                timeout, response, "button interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=button.message_id
+                timeout,
+                response,
+                "button interactions",
+                nonce,
+                ["MESSAGE_CREATE", "MESSAGE_UPDATE"],
+                message_id=button.message_id,
             )
             if post_handling:
                 return post_handling
             continue
-    
-    def select(self, dropdown: Dropdown, options: list, retry_attempts: int=10, timeout: int=10) -> Optional[Message]:
+
+    def select(
+        self,
+        dropdown: Dropdown,
+        options: list,
+        retry_attempts: int = 10,
+        timeout: int = 10,
+    ) -> Optional[Message]:
         nonce = self._create_nonce()
         data = {
             "type": 3,
@@ -465,8 +448,8 @@ class Client:
                 "component_type": 3,
                 "custom_id": dropdown.custom_id,
                 "type": 3,
-                "values": options
-            }
+                "values": options,
+            },
         }
         for i in range(retry_attempts):
             response = Response(
@@ -482,7 +465,12 @@ class Client:
                 )
             )
             post_handling = self._post_handling(
-                timeout, response, "dropdown interactions", nonce, ["MESSAGE_CREATE", "MESSAGE_UPDATE"], message_id=dropdown.message_id
+                timeout,
+                response,
+                "dropdown interactions",
+                nonce,
+                ["MESSAGE_CREATE", "MESSAGE_UPDATE"],
+                message_id=dropdown.message_id,
             )
             if post_handling:
                 return post_handling

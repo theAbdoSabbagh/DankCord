@@ -8,3 +8,4 @@ bot.py
 src/DankCord/.DS_Store
 .DS_Store
 base-folder
+dist
