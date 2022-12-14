@@ -1,7 +1,7 @@
 from typing import Literal, Optional, Union
+from rich import print
 
 import orjson
-
 
 class Config:
     def __init__(
@@ -170,8 +170,8 @@ class Message:
     """
 
     def __init__(self, data: dict) -> None:
-        self.content: str = data["content"]
         self.data: dict = data
+        self.content: str = data["content"]
         self.id: int = data["id"]
         self.timestamp: int = data["timestamp"]
         self.channel: int = int(data["channel_id"])
@@ -183,16 +183,41 @@ class Message:
         self.dropdowns: list = [
             item for component in self.components for item in component.components if isinstance(item, Dropdown)
         ]
+        try:
+            self.nonce: str = data["nonce"]
+        except:
+            self.nonce: str = ""
+            print(data)
 
 
 class Bot:
     """
     Represents the bot account.
     """
-
+    
     def __init__(self, data: dict) -> None:
         self.username: str = data["d"]["user"]["username"]
         self.id: int = int(data["d"]["user"]["id"])
         self.discriminator: int = int(data["d"]["user"]["discriminator"])
         self.email: str = data["d"]["user"]["email"]
         self.bot: str = f"{self.username}#{self.discriminator}"
+
+class InteractionSuccess:
+    """
+    Represents a builtin class that is used to store data, used to confirm a command was executed. 
+    """
+
+    def __init__(self, data: dict) -> None:
+        self.nonce: str = data["nonce"]
+        self.id: str = data["id"]
+
+class CommandResult:
+    """
+    Represents a class that has the result of running a certain command.
+    """
+    
+    def __init__(self, success: bool, death: bool, gain: dict, loss: dict) -> None:
+        self.success: bool = success
+        self.death: bool = death
+        self.gain: dict = gain
+        self.loss: dict = loss
