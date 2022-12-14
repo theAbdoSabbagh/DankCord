@@ -1,11 +1,12 @@
 import orjson, datetime, json, time
 import faster_than_requests as requests
 
-from typing import Optional
+from typing import Optional, Literal, Union
 from pyloggor import pyloggor
+from websocket import WebSocket
 
 from .exceptions import InvalidComponent, UnknownChannel, NonceTimeout
-from .Objects import Response, Config, Message
+from .Objects import InteractionSuccess, Response, Config, Message
 
 class Core:
     def __init__(self,
@@ -14,7 +15,8 @@ class Core:
         commands_data: dict,
         guild_id : Optional[int],
         session_id : Optional[str],
-        logger: pyloggor
+        logger: pyloggor,
+        ws: WebSocket
     ) -> None:
         self.token = config.token
         self.channel_id = config.channel_id
@@ -25,6 +27,7 @@ class Core:
         self.guild_id = guild_id
         self.logger = logger
         self.ws_cache = {}
+        self.ws = ws
 
     def _tupalize(self, dict):
         return [(a, b) for a, b in dict.items()]
@@ -86,10 +89,20 @@ class Core:
                     ),
                 )
             )
-            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
-            if post_handling:
-                return post_handling
-            continue
+            # post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
+            # if post_handling:
+                # return post_handling
+            try:
+                interaction: Optional[Union[Message, InteractionSuccess]] = self.wait_for("MESSAGE_CREATE", nonce)
+                if not interaction or interaction.nonce != nonce:
+                    continue
+            except Exception as e:
+                print(f"Error in core: {e}")
+                continue
+            else:
+                return interaction
+            
+        return None
 
     def _post_handling(
         self,
@@ -154,6 +167,37 @@ class Core:
         if not _message:
             raise NonceTimeout("Did not receive nonce in time.")
 
+        return None
+
+    def _recv_handler(self):
+        try:
+            event = self.ws.recv()
+            data = orjson.loads(event)
+            return data
+        except:
+            return False
+    
+    def wait_for(
+        self,
+        event: Literal["MESSAGE_CREATE", "INTERACTION_SUCCESS"],
+        nonce: str,
+        timeout: int = 10
+    ) -> Optional[Union[Message, InteractionSuccess]]:
+        events_type = {
+            "MESSAGE_CREATE": Message,
+            "INTERACTION_SUCCESS": InteractionSuccess,
+        }
+        limit = time.time() + timeout
+        while time.time() < limit:
+            data = self._recv_handler()
+            if not data or data.get("t") != event: continue
+            try:
+                if data["d"]["nonce"] != nonce:
+                    continue
+            except:
+                continue
+            return events_type[event](data["d"])
+        
         return None
 
     # Raw commands
@@ -341,6 +385,7 @@ class Core:
         return self._run_command("postmemes", retry_attempts, timeout)
 
     # Gamble commands
+    # TODO Change to run_sub_command and allow the user to set a bet 
     def slots(self, retry_attempts: int = 3, timeout:int = 10):
         """
         Runs the `slots` command.
