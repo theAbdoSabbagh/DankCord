@@ -179,19 +179,23 @@ class Gateway:
 
             if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"):
                 continue
-
-            if event["t"] == "INTERACTION_CREATE":
-                self.cache.interaction_create.append(event["d"]["nonce"])
-            elif event["t"] == "INTERACTION_SUCCESS":
-                self.cache.interaction_success.append(event["d"]["nonce"])
-            elif event["t"] == "MESSAGE_CREATE":
-                self.cache.message_create[event["d"]["nonce"]] = event["d"]
-                self.cache.nonce_message_map[event["d"]["nonce"]] = event["d"]["id"]
-            elif event["t"] == "MESSAGE_UPDATE":
-                if event["d"]["id"] not in self.cache.message_updates:
-                    self.cache.message_updates[event["d"]["id"]] = []
-                self.cache.message_updates[event["d"]["id"]].append(event["d"])
-            else:
-                print("----------------- DEBUG START -----------------")
-                print(event)
-                print("----------------- DEBUG END -----------------")
+            
+            try:
+                if event["t"] == "INTERACTION_CREATE":
+                    self.cache.interaction_create.append(event["d"]["nonce"])
+                elif event["t"] == "INTERACTION_SUCCESS":
+                    self.cache.interaction_success.append(event["d"]["nonce"])
+                elif event["t"] == "MESSAGE_CREATE":
+                    self.cache.message_create[event["d"]["nonce"]] = event["d"]
+                    self.cache.nonce_message_map[event["d"]["nonce"]] = event["d"]["id"]
+                elif event["t"] == "MESSAGE_UPDATE":
+                    if event["d"]["id"] not in self.cache.message_updates:
+                        self.cache.message_updates[event["d"]["id"]] = []
+                    self.cache.message_updates[event["d"]["id"]].append(event["d"])
+                else:
+                    print("----------------- DEBUG START -----------------")
+                    print(event)
+                    print("----------------- DEBUG END -----------------")
+            except Exception as e:
+                # print(f"Error: {e}")
+                pass
