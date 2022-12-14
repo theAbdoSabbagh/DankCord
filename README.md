@@ -38,9 +38,9 @@ client = Client(
         level_adjustment_space=9,
     ),
 )
-message = bot.fish()
-message = bot.beg()
-message = bot.hunt()
+message = bot.core.fish()
+message = bot.core.beg()
+message = bot.core.hunt()
 message = bot.run_command(name="", **kwargs)
 message = bot.run_sub_command(name="", sub_name="", **kwargs)
 ```
