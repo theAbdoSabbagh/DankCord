@@ -158,33 +158,173 @@ class Core:
 
     # Raw commands
     def fish(self, retry_attempts:int = 3, timeout:int = 10):
-        self._run_command("fish", retry_attempts, timeout)
+        """
+        Runs the `fish` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("fish", retry_attempts, timeout)
         
     def hunt(self, retry_attempts:int = 3, timeout:int = 10):
-        self._run_command("hunt", retry_attempts, timeout)
+        """
+        Runs the `hunt` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("hunt", retry_attempts, timeout)
         
     def dig(self, retry_attempts:int = 3, timeout:int = 10):
-        self._run_command("dig", retry_attempts, timeout)
+        """
+        Runs the `dig` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("dig", retry_attempts, timeout)
         
     def beg(self, retry_attempts:int = 3, timeout:int = 10):
-        self._run_command("beg", retry_attempts, timeout)
+        """
+        Runs the `beg` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("beg", retry_attempts, timeout)
     
     # Button commands
     def search(self, retry_attempts:int = 3, timeout:int = 10):
-        self._run_command("search", retry_attempts, timeout)
+        """
+        Runs the `search` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("search", retry_attempts, timeout)
 
     def crime(self, retry_attempts: int = 3, timeout:int = 10):
-        self._run_command("crime", retry_attempts, timeout)
+        """
+        Runs the `crime` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("crime", retry_attempts, timeout)
 
     def postmemes(self, retry_attempts: int = 3, timeout:int = 10):
-        self._run_command("postmemes", retry_attempts, timeout)
+        """
+        Runs the `postmemes` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("postmemes", retry_attempts, timeout)
 
     # Gamble commands
     def slots(self, retry_attempts: int = 3, timeout:int = 10):
-        self._run_command("slots", retry_attempts, timeout)
+        """
+        Runs the `slots` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("slots", retry_attempts, timeout)
 
     def gamble(self, retry_attempts: int = 3, timeout:int = 10):
-        self._run_command("gamble", retry_attempts, timeout)
+        """
+        Runs the `gamble` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("gamble", retry_attempts, timeout)
 
     def snakeeyes(self, retry_attempts: int = 3, timeout:int = 10):
-        self._run_command("snakeeyes", retry_attempts, timeout)
+        """
+        Runs the `snakeeyes` command.
+        
+        Arguments
+        --------
+        retry_attempts: int
+            The amount of times to retry when executing the command fails.
+        timeout: int
+            The time it waits for to confirm whether a command was ran or not.
+        
+        Returns
+        --------
+        message: Message | None
+        """
+        return self._run_command("snakeeyes", retry_attempts, timeout)
