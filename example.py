@@ -1,5 +1,4 @@
-from src.DankCord import Client
-from src.DankCord import Config
+from src.DankCord import Client, Config
 from pyloggor import pyloggor
 
 client = Client(
