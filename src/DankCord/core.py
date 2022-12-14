@@ -163,14 +163,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("fish", retry_attempts, timeout)
         
@@ -180,14 +189,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("hunt", retry_attempts, timeout)
         
@@ -197,14 +215,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("dig", retry_attempts, timeout)
         
@@ -214,14 +241,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("beg", retry_attempts, timeout)
     
@@ -232,14 +268,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("search", retry_attempts, timeout)
 
@@ -249,14 +294,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("crime", retry_attempts, timeout)
 
@@ -266,14 +320,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("postmemes", retry_attempts, timeout)
 
@@ -284,14 +347,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("slots", retry_attempts, timeout)
 
@@ -301,14 +373,23 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("gamble", retry_attempts, timeout)
 
@@ -318,13 +399,22 @@ class Core:
         
         Arguments
         --------
-        retry_attempts: int
+        retry_attempts: `int`
             The amount of times to retry when executing the command fails.
-        timeout: int
+        timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
         
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
         Returns
         --------
-        message: Message | None
+        message: Optional[`Message`]
         """
         return self._run_command("snakeeyes", retry_attempts, timeout)
