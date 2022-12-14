@@ -1,17 +1,16 @@
-import datetime
-import json
-import time
-from string import printable
-from typing import Optional
-
+import datetime, json, time, orjson
 import faster_than_requests as requests
-import orjson
+
+from rich import print
+from string import printable
+from typing import Literal, Optional, Union
 from pyloggor import pyloggor
+from threading import Thread
 
 from .DankMemer import DankMemer
-from .exceptions import InvalidComponent, NoCommands, NonceTimeout, UnknownChannel
+from .exceptions import InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
-from .Objects import Button, Config, Dropdown, Message, Response
+from .Objects import Button, Config, Dropdown, InteractionSuccess, Message, Response
 from .core import Core
 
 class Client:
@@ -46,7 +45,7 @@ class Client:
         logger.log(
             level="Info", msg=f"Fully booted up, it took total {round(time.perf_counter() - __boot_start, 3)} seconds."
         )
-        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger)
+        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger, self.ws)
 
     def _clean(self, content: str) -> str:
         return "".join([char for char in content if char in printable])
@@ -66,6 +65,8 @@ class Client:
 
         if response.data.get("code") == 10003:
             raise UnknownChannel("Bot doesn't have access to this channel.")
+        if response.data.get("code") == 50013:
+            raise MissingPermissions("Bot cannot view the channel or read it's content.")
 
         if "application_commands" not in response.data:
             raise NoCommands("No commands found.")
@@ -127,6 +128,14 @@ class Client:
         if resp.code != 200:
             raise Exception("Failed to get user info.")
         self.username = resp.data["username"]
+
+    def _recv_handler(self) -> Optional[dict]:
+        try:
+            event = self.ws.recv()
+            data = orjson.loads(event)
+            return data
+        except:
+            return None
 
     def run_command(self, name: str, retry_attempts=3, timeout: int = 10):
         nonce = self._create_nonce()
@@ -477,3 +486,26 @@ class Client:
             if post_handling:
                 return post_handling
             continue
+
+    def wait_for(
+        self,
+        event: Literal["MESSAGE_CREATE", "INTERACTION_SUCCESS"],
+        nonce: str,
+        timeout: int = 10
+    ) -> Optional[Union[Message, InteractionSuccess]]:
+        events_type = {
+            "MESSAGE_CREATE": Message,
+            "INTERACTION_SUCCESS": InteractionSuccess,
+        }
+        limit = time.time() + timeout
+        while time.time() < limit:
+            data = self._recv_handler()
+            if not data or data.get("t") != event: continue
+            try:
+                if data["d"]["nonce"] != nonce:
+                    continue
+            except:
+                continue
+            return events_type[event](data["d"])
+        
+        return None
