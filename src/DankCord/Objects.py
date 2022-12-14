@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import orjson
 
@@ -83,7 +83,8 @@ class ActionRow:
     Represents an ActionRow.
     """
 
-    def __init__(self, data: dict, message_id: str):
+    def __init__(self, data: dict, message_id: Union[str, int]):
+        message_id = str(message_id)
         self.components = [
             Button(i, message_id) if i["type"] == 2 else Dropdown(i, message_id) for i in data["components"]
         ]
@@ -158,7 +159,7 @@ class Embed:
         self.title: str = data.get("title", None)
         self.description: str = data.get("description", None)
         self.url: str = data.get("url", None)
-        self.author: Author = Author(data["author"]) if "author" in data else None
+        self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
         self.footer: Optional[EmbedFooter] = EmbedFooter(data["footer"]) if "footer" in data else None
         self.data: dict = data
 

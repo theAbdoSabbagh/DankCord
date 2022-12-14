@@ -110,9 +110,9 @@ class Gateway:
 
         if identify["op"] != 0:
             self.logger.log(
-                "UNHANDLED DEBUG",
+                level="UNHANDLED DEBUG",
                 msg="Unhandled case, send this to the developers.",
-                extra={"identify_response": identify},
+                extras={"identify_response": identify},
             )
             return False
 

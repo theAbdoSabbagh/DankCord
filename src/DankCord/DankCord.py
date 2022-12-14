@@ -12,7 +12,7 @@ from .DankMemer import DankMemer
 from .exceptions import InvalidComponent, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
 from .Objects import Button, Config, Dropdown, Message, Response
-
+from .core import Core
 
 class Client:
     def __init__(self, config: Config, logger: pyloggor):
@@ -21,20 +21,21 @@ class Client:
         self.token = config.token
         self.logger = logger
 
-        self.channel_id: str = config.channel_id
+        self.channel_id: str = str(config.channel_id)
         self.dm_mode = config.dm_mode
 
         self.resource_intensivity = config.resource_intensivity
         self.commands_data = {}
+        self.ws_cache = {}
 
         self.gateway = Gateway(config, self.logger)
         if not self.gateway:
             raise ConnectionError("Failed to connect to gateway.")
 
         self.ws = self.gateway.ws
-        self.session_id: str = self.gateway.session_id
+        self.session_id: Optional[str] = self.gateway.session_id
 
-        self.user_id: int = self.gateway.user_id
+        self.user_id: Optional[int] = self.gateway.user_id
         if not config.dm_mode:
             self.guild_id = self.gateway.guild_id
 
@@ -45,6 +46,7 @@ class Client:
         logger.log(
             level="Info", msg=f"Fully booted up, it took total {round(time.perf_counter() - __boot_start, 3)} seconds."
         )
+        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger)
 
     def _clean(self, content: str) -> str:
         return "".join([char for char in content if char in printable])
@@ -344,7 +346,7 @@ class Client:
                 if response.data["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
                     raise InvalidComponent("Invalid component.")
                 if retry_after > 0:
-                    self.logger.log("Warning", msg=f"Ratelimited while running {name}, retrying after {retry_after}")
+                    self.logger.log(level="Warning", msg=f"Ratelimited while running {name}, retrying after {retry_after}")
                     time.sleep(retry_after)
 
                 return None
