@@ -24,10 +24,25 @@ $ python3 -m pip install -U .
 ```
 # Quick Example
 ```py
-from DankCord import Client
-bot=Client("token", channel_id) # channel_id is int
-bot.run_command(name="", **kwargs)
-bot.run_sub_command(name="", sub_name="", **kwargs)
+from DankCord import Client, Config
+from pyloggor import pyloggor
+
+client = Client(
+    Config("TOKEN", 00000000000), # Second argument is channel ID, must be int
+    pyloggor(
+        show_file=False,
+        show_topic=False,
+        show_symbol=False,
+        show_time=False,
+        title_level=True,
+        level_adjustment_space=9,
+    ),
+)
+message = bot.fish()
+message = bot.beg()
+message = bot.hunt()
+message = bot.run_command(name="", **kwargs)
+message = bot.run_sub_command(name="", sub_name="", **kwargs)
 ```
 
 # Links
