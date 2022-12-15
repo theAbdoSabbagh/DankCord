@@ -1,8 +1,7 @@
-import threading
-import time
-from typing import Optional
+import threading, time, orjson
 
-import orjson
+from rich import print
+from typing import Optional
 from pyloggor import pyloggor
 from websocket import create_connection
 
@@ -197,5 +196,6 @@ class Gateway:
                     print(event)
                     print("----------------- DEBUG END -----------------")
             except Exception as e:
+                # the error is often `nonce` key not being there
                 # print(f"Error: {e}")
                 pass
