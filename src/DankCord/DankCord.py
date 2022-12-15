@@ -477,7 +477,7 @@ class Client:
         event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
         nonce_or_id: str,
         timeout: int = 10
-    ) -> Optional[Union[Message, bool, None]]:
+    ) -> Optional[Union[Message, bool]]:
         limit = time.time() + timeout
         while time.time() < limit:
             cache = self.gateway.cache
