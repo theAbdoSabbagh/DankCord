@@ -10,7 +10,7 @@ from threading import Thread
 from .DankMemer import DankMemer
 from .exceptions import InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
-from .Objects import Button, Config, Dropdown, InteractionSuccess, Message, Response
+from .Objects import Button, Config, Dropdown, Message, Response
 from .core import Core
 
 class Client:
@@ -45,7 +45,7 @@ class Client:
         logger.log(
             level="Info", msg=f"Fully booted up, it took total {round(time.perf_counter() - __boot_start, 3)} seconds."
         )
-        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger, self.ws)
+        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger, self.gateway)
 
     def _clean(self, content: str) -> str:
         return "".join([char for char in content if char in printable])
@@ -128,14 +128,6 @@ class Client:
         if resp.code != 200:
             raise Exception("Failed to get user info.")
         self.username = resp.data["username"]
-
-    def _recv_handler(self) -> Optional[dict]:
-        try:
-            event = self.ws.recv()
-            data = orjson.loads(event)
-            return data
-        except:
-            return None
 
     def run_command(self, name: str, retry_attempts=3, timeout: int = 10):
         nonce = self._create_nonce()
@@ -485,27 +477,23 @@ class Client:
             )
             if post_handling:
                 return post_handling
-            continue
 
     def wait_for(
         self,
-        event: Literal["MESSAGE_CREATE", "INTERACTION_SUCCESS"],
-        nonce: str,
+        event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
+        nonce_or_id: str,
         timeout: int = 10
-    ) -> Optional[Union[Message, InteractionSuccess]]:
-        events_type = {
-            "MESSAGE_CREATE": Message,
-            "INTERACTION_SUCCESS": InteractionSuccess,
-        }
+    ) -> Optional[Union[Message, bool, None]]:
         limit = time.time() + timeout
         while time.time() < limit:
-            data = self._recv_handler()
-            if not data or data.get("t") != event: continue
-            try:
-                if data["d"]["nonce"] != nonce:
-                    continue
-            except:
-                continue
-            return events_type[event](data["d"])
-        
+            cache = self.gateway.cache
+            if event in ("INTERACTION_CREATE", "INTERACTION_SUCCESS"):
+                if nonce_or_id in cache.interaction_create or nonce_or_id in cache.interaction_success:
+                    return True
+            if event == "MESSAGE_CREATE":
+                if cache.message_create.get(nonce_or_id):
+                    return Message(cache.message_create[nonce_or_id])
+            if event == "MESSAGE_UPDATE":
+                if cache.message_updates.get(nonce_or_id):
+                    return Message(cache.message_updates[nonce_or_id])
         return None
