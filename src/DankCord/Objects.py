@@ -186,8 +186,8 @@ class Message:
         try:
             self.nonce: str = data["nonce"]
         except:
+            # Unless used wrongly, it just means the object was used on a MESSAGE_UPDATE data, those don't have nonce
             self.nonce: str = ""
-            print(data)
 
 
 class Bot:
@@ -201,15 +201,6 @@ class Bot:
         self.discriminator: int = int(data["d"]["user"]["discriminator"])
         self.email: str = data["d"]["user"]["email"]
         self.bot: str = f"{self.username}#{self.discriminator}"
-
-class InteractionSuccess:
-    """
-    Represents a builtin class that is used to store data, used to confirm a command was executed. 
-    """
-
-    def __init__(self, data: dict) -> None:
-        self.nonce: str = data["nonce"]
-        self.id: str = data["id"]
 
 class CommandResult:
     """
