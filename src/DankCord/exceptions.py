@@ -14,6 +14,10 @@ class InvalidToken(DankCordException):
     pass
 
 
+class MissingPermissions(DankCordException):
+    pass
+
+
 class UnknownChannel(DankCordException):
     pass
 

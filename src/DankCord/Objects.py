@@ -1,7 +1,7 @@
 from typing import Literal, Optional, Union
+from rich import print
 
 import orjson
-
 
 class Config:
     def __init__(
@@ -170,8 +170,8 @@ class Message:
     """
 
     def __init__(self, data: dict) -> None:
-        self.content: str = data["content"]
         self.data: dict = data
+        self.content: str = data["content"]
         self.id: int = data["id"]
         self.timestamp: int = data["timestamp"]
         self.channel: int = int(data["channel_id"])
@@ -183,16 +183,32 @@ class Message:
         self.dropdowns: list = [
             item for component in self.components for item in component.components if isinstance(item, Dropdown)
         ]
+        try:
+            self.nonce: str = data["nonce"]
+        except:
+            # Unless used wrongly, it just means the object was used on a MESSAGE_UPDATE data, those don't have nonce
+            self.nonce: str = ""
 
 
 class Bot:
     """
     Represents the bot account.
     """
-
+    
     def __init__(self, data: dict) -> None:
         self.username: str = data["d"]["user"]["username"]
         self.id: int = int(data["d"]["user"]["id"])
         self.discriminator: int = int(data["d"]["user"]["discriminator"])
         self.email: str = data["d"]["user"]["email"]
         self.bot: str = f"{self.username}#{self.discriminator}"
+
+class CommandResult:
+    """
+    Represents a class that has the result of running a certain command.
+    """
+    
+    def __init__(self, success: bool, death: bool, gain: dict, loss: dict) -> None:
+        self.success: bool = success
+        self.death: bool = death
+        self.gain: dict = gain
+        self.loss: dict = loss

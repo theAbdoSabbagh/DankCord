@@ -1,15 +1,14 @@
-import datetime
-import json
-import time
-from string import printable
-from typing import Optional
-
+import datetime, json, time, orjson
 import faster_than_requests as requests
-import orjson
+
+from rich import print
+from string import printable
+from typing import Literal, Optional, Union
 from pyloggor import pyloggor
+from threading import Thread
 
 from .DankMemer import DankMemer
-from .exceptions import InvalidComponent, NoCommands, NonceTimeout, UnknownChannel
+from .exceptions import InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
 from .Objects import Button, Config, Dropdown, Message, Response
 from .core import Core
@@ -46,7 +45,7 @@ class Client:
         logger.log(
             level="Info", msg=f"Fully booted up, it took total {round(time.perf_counter() - __boot_start, 3)} seconds."
         )
-        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger)
+        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger, self.gateway)
 
     def _clean(self, content: str) -> str:
         return "".join([char for char in content if char in printable])
@@ -66,6 +65,8 @@ class Client:
 
         if response.data.get("code") == 10003:
             raise UnknownChannel("Bot doesn't have access to this channel.")
+        if response.data.get("code") == 50013:
+            raise MissingPermissions("Bot cannot view the channel or read it's content.")
 
         if "application_commands" not in response.data:
             raise NoCommands("No commands found.")
@@ -89,7 +90,7 @@ class Client:
         if self.resource_intensivity == "MEM":
             return self.commands_data.get(name, {})
         else:
-            return json.load(open(f"{self.channel_id}_commands.json")).get(name, {})
+            return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
 
     def _OptionsBuilder(self, name, type_, **kwargs):
         options = [{"type": type_, "name": name, "options": []}]
@@ -391,8 +392,9 @@ class Client:
 
         return None
 
-    def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> Optional[Message]:
+    def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> bool:
         nonce = self._create_nonce()
+        retry_attempts = retry_attempts if retry_attempts > 0 else 1
         data = {
             "type": 3,
             "nonce": nonce,
@@ -417,17 +419,11 @@ class Client:
                     ),
                 )
             )
-            post_handling = self._post_handling(
-                timeout,
-                response,
-                "button interactions",
-                nonce,
-                ["MESSAGE_CREATE", "MESSAGE_UPDATE"],
-                message_id=button.message_id,
-            )
-            if post_handling:
-                return post_handling
-            continue
+            if response.code == 204:
+                break
+            time.sleep(int(response.data.get('retry_after', 0)))
+        
+        return True if response.code == 204 else False
 
     def select(
         self,
@@ -476,4 +472,24 @@ class Client:
             )
             if post_handling:
                 return post_handling
-            continue
+
+    def wait_for(
+        self,
+        event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
+        nonce_or_id: str,
+        timeout: int = 10
+    ) -> Optional[Union[Message, bool]]:
+        limit = time.time() + timeout
+        while time.time() < limit:
+            cache = self.gateway.cache
+            if event == "INTERACTION_CREATE":
+                return nonce_or_id in cache.interaction_create
+            if event =="INTERACTION_SUCCESS":
+                return nonce_or_id in cache.interaction_success
+            if event == "MESSAGE_CREATE":
+                if cache.message_create.get(nonce_or_id):
+                    return Message(cache.message_create[nonce_or_id])
+            if event == "MESSAGE_UPDATE":
+                if cache.message_updates.get(nonce_or_id):
+                    return Message(cache.message_updates[nonce_or_id])
+        return None

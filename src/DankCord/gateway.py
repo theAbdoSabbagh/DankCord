@@ -1,8 +1,7 @@
-import threading
-import time
-from typing import Optional
+import threading, time, orjson
 
-import orjson
+from rich import print
+from typing import Optional
 from pyloggor import pyloggor
 from websocket import create_connection
 
@@ -179,7 +178,7 @@ class Gateway:
 
             if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"):
                 continue
-
+            
             if event["t"] == "INTERACTION_CREATE":
                 self.cache.interaction_create.append(event["d"]["nonce"])
             elif event["t"] == "INTERACTION_SUCCESS":
