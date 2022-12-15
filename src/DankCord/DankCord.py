@@ -90,7 +90,7 @@ class Client:
         if self.resource_intensivity == "MEM":
             return self.commands_data.get(name, {})
         else:
-            return json.load(open(f"{self.channel_id}_commands.json")).get(name, {})
+            return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
 
     def _OptionsBuilder(self, name, type_, **kwargs):
         options = [{"type": type_, "name": name, "options": []}]
@@ -392,7 +392,7 @@ class Client:
 
         return None
 
-    def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> Optional[Message]:
+    def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> bool:
         nonce = self._create_nonce()
         data = {
             "type": 3,
@@ -418,17 +418,11 @@ class Client:
                     ),
                 )
             )
-            post_handling = self._post_handling(
-                timeout,
-                response,
-                "button interactions",
-                nonce,
-                ["MESSAGE_CREATE", "MESSAGE_UPDATE"],
-                message_id=button.message_id,
-            )
-            if post_handling:
-                return post_handling
-            continue
+            if response.code == 204:
+                break
+            time.sleep(int(response.data.get('retry_after', 0)))
+        
+        return True if response.code == 204 else False
 
     def select(
         self,
