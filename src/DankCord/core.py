@@ -90,7 +90,7 @@ class Core:
                 )
             )
             try:
-                interaction: Optional[Union[Message, bool, None]] = self.wait_for("MESSAGE_CREATE", nonce)
+                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", nonce)
                 return interaction
             except Exception as e:
                 print(f"Error in core.py _run_command: {e}")
@@ -103,7 +103,7 @@ class Core:
         event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
         nonce_or_id: str,
         timeout: int = 10
-    ) -> Optional[Union[Message, bool, None]]:
+    ) -> Optional[Union[Message, bool]]:
         limit = time.time() + timeout
         while time.time() < limit:
             cache = self.gateway.cache
