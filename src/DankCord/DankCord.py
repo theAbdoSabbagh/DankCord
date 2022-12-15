@@ -394,6 +394,7 @@ class Client:
 
     def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> bool:
         nonce = self._create_nonce()
+        retry_attempts = retry_attempts if retry_attempts > 0 else 1
         data = {
             "type": 3,
             "nonce": nonce,
@@ -477,13 +478,14 @@ class Client:
         event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
         nonce_or_id: str,
         timeout: int = 10
-    ) -> Optional[Union[Message, bool, None]]:
+    ) -> Optional[Union[Message, bool]]:
         limit = time.time() + timeout
         while time.time() < limit:
             cache = self.gateway.cache
-            if event in ("INTERACTION_CREATE", "INTERACTION_SUCCESS"):
-                if nonce_or_id in cache.interaction_create or nonce_or_id in cache.interaction_success:
-                    return True
+            if event == "INTERACTION_CREATE":
+                return nonce_or_id in cache.interaction_create
+            if event =="INTERACTION_SUCCESS":
+                return nonce_or_id in cache.interaction_success
             if event == "MESSAGE_CREATE":
                 if cache.message_create.get(nonce_or_id):
                     return Message(cache.message_create[nonce_or_id])
