@@ -34,6 +34,7 @@ class Cache:
         self.nonce_message_map = {}
         self.interaction_create = []
         self.interaction_success = []
+        self.raw_message_updates = []
         self.message_create = {}
         self.message_updates = {}
 
@@ -49,6 +50,7 @@ class Cache:
             self.interaction_success.remove(nonce)
         if nonce in self.message_create:
             del self.message_create[nonce]
+        self.raw_message_updates = []
 
 
 class Response:
@@ -75,7 +77,12 @@ class Author:
 
     def __init__(self, data: dict) -> None:
         self.name: str = data.get("name", None)
-        self.icon_url = data.get("icon_url", None)
+        self.discriminator: str = data.get("discriminator", None)
+        self.icon_url: str = data.get("icon_url", None)
+        self.id: int = int(data.get("id", 0))
+    
+    def __repr__(self) -> str:
+        return f"{self.name}#{self.discriminator}"
 
 
 class ActionRow:
@@ -84,11 +91,11 @@ class ActionRow:
     """
 
     def __init__(self, data: dict, message_id: Union[str, int]):
-        message_id = str(message_id)
+        message_id = str(message_id) # type: ignore
         self.components = [
             Button(i, message_id) if i["type"] == 2 else Dropdown(i, message_id) for i in data["components"]
         ]
-
+    
 
 class DropdownOption:
     """
@@ -171,10 +178,12 @@ class Message:
 
     def __init__(self, data: dict) -> None:
         self.data: dict = data
-        self.content: str = data["content"]
-        self.id: int = data["id"]
-        self.timestamp: int = data["timestamp"]
-        self.channel: int = int(data["channel_id"])
+        self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
+        self.content: str = data.get("content", "")
+        self.nonce: str = data.get("nonce", "")
+        self.id: int = int(data.get("id", 0))
+        self.timestamp: str = data.get("timestamp", "")
+        self.channel_id: int = int(data.get("channel_id", 0))
         self.embeds: list = [Embed(i) for i in data.get("embeds", [])]
         self.components: list = [ActionRow(i, self.id) for i in data.get("components", [])]
         self.buttons: list = [
@@ -183,12 +192,6 @@ class Message:
         self.dropdowns: list = [
             item for component in self.components for item in component.components if isinstance(item, Dropdown)
         ]
-        try:
-            self.nonce: str = data["nonce"]
-        except:
-            # Unless used wrongly, it just means the object was used on a MESSAGE_UPDATE data, those don't have nonce
-            self.nonce: str = ""
-
 
 class Bot:
     """
