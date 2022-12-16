@@ -1,9 +1,8 @@
 import orjson, datetime, json, time
 import faster_than_requests as requests
 
-from typing import Optional, Literal, Union
+from typing import Optional, Literal, Union, Callable
 from pyloggor import pyloggor
-from websocket import WebSocket
 
 from .Objects import Response, Config, Message
 from .gateway import Gateway
@@ -41,7 +40,7 @@ class Core:
         else:
             return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
 
-    def _run_command(self, name: str, retry_attempts= 3, timeout:int = 10):
+    def _run_command(self, name: str, retry_attempts= 3, timeout:int = 10) -> Optional[Message]:
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
@@ -75,6 +74,8 @@ class Core:
             },
             "nonce": nonce,
         }
+        def check(message: Message):
+            return message.nonce == nonce
 
         for i in range(retry_attempts):
             response = Response(
@@ -90,8 +91,8 @@ class Core:
                 )
             )
             try:
-                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", nonce)
-                return interaction
+                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
+                return interaction # type: ignore
             except Exception as e:
                 print(f"Error in core.py _run_command: {e}")
                 continue
@@ -101,21 +102,77 @@ class Core:
     def wait_for(
         self,
         event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
-        nonce_or_id: str,
-        timeout: int = 10
+        check: Optional[Callable[..., bool]] = None,
+        timeout: float = 10
     ) -> Optional[Union[Message, bool]]:
+        """
+
+        Waits for a WebSocket event to be dispatched.
+
+        This could be used to wait for a message to be sent or a message to be edited,
+        or even to confirm an interaction being created or successful.
+
+        The ``timeout`` parameter specifies how long to wait for until the desired event
+        is dispatched; if the event was not dispatched before the timeout duration is over,
+        it returns `None`.
+
+        This function returns the **first event that meets the requirements**.
+
+        Examples
+        ---------
+
+        Waiting for a message to be sent: ::
+
+            def DankMemerShop():
+                def check(message: Message):
+                    # The author ID is the ID of Dank Memer
+                    return message.author.id == 270904126974590976 and "shop" in message.embeds[0].title.lower()
+                
+                message = bot.wait_for("MESSAGE_CREATE", check = check)
+                # in this case the message is of the type `Message`
+
+
+        Parameters
+        ------------
+        event: :class:`str`
+            The event name.
+        check: Optional[Callable[..., :class:`bool`]]
+            A predicate to check what to wait for. The arguments must meet the
+            parameters of the event being waited for.
+        timeout: Optional[:class:`float`]
+            The number of seconds to wait before timing out and returning `None`.
+
+        Returns
+        --------
+        Optional[Union[Message, bool]]
+            Returns the Message object, or a boolean.
+        """
         limit = time.time() + timeout
+        if check is None:
+            def _check(*args):
+                return True
+            check = _check
+
         while time.time() < limit:
-            cache = self.gateway.cache
-            if event in ("INTERACTION_CREATE", "INTERACTION_SUCCESS"):
-                if nonce_or_id in cache.interaction_create or nonce_or_id in cache.interaction_success:
+            cache = self.gateway.cache            
+            if event == "INTERACTION_CREATE":
+                if check(cache.interaction_create[-1]):
                     return True
+            if event =="INTERACTION_SUCCESS":
+                if check(cache.interaction_success[-1]):
+                    return True
+
             if event == "MESSAGE_CREATE":
-                if cache.message_create.get(nonce_or_id):
-                    return Message(cache.message_create[nonce_or_id])
+                value = list(cache.message_create.values())[-1]
+                _msg = Message(value)
+                if check(_msg) is True:
+                    return _msg
             if event == "MESSAGE_UPDATE":
-                if cache.message_updates.get(nonce_or_id):
-                    return Message(cache.message_updates[nonce_or_id])
+                while len(cache.raw_message_updates) == 0:
+                    continue
+                _msg = Message(cache.raw_message_updates[-1])
+                if check(_msg) is True:
+                    return _msg
         return None
 
     # Raw commands

@@ -3,7 +3,7 @@ import faster_than_requests as requests
 
 from rich import print
 from string import printable
-from typing import Literal, Optional, Union
+from typing import Callable, Literal, Optional, Union
 from pyloggor import pyloggor
 from threading import Thread
 
@@ -423,7 +423,7 @@ class Client:
                 break
             time.sleep(int(response.data.get('retry_after', 0)))
         
-        return True if response.code == 204 else False
+        return True if response.code == 204 else False # type: ignore
 
     def select(
         self,
@@ -476,20 +476,75 @@ class Client:
     def wait_for(
         self,
         event: Literal["MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"],
-        nonce_or_id: str,
-        timeout: int = 10
+        check: Optional[Callable[..., bool]] = None,
+        timeout: float = 10
     ) -> Optional[Union[Message, bool]]:
+        """
+
+        Waits for a WebSocket event to be dispatched.
+
+        This could be used to wait for a message to be sent or a message to be edited,
+        or even to confirm an interaction being created or successful.
+
+        The ``timeout`` parameter specifies how long to wait for until the desired event
+        is dispatched; if the event was not dispatched before the timeout duration is over,
+        it returns `None`.
+
+        This function returns the **first event that meets the requirements**.
+
+        Examples
+        ---------
+
+        Waiting for a message to be sent: ::
+
+            def DankMemerShop():
+                def check(message: Message):
+                    # The author ID is the ID of Dank Memer
+                    return message.author.id == 270904126974590976 and "shop" in message.embeds[0].title.lower()
+                
+                message = bot.wait_for("MESSAGE_CREATE", check = check)
+                # in this case the message is of the type `Message`
+
+
+        Parameters
+        ------------
+        event: :class:`str`
+            The event name.
+        check: Optional[Callable[..., :class:`bool`]]
+            A predicate to check what to wait for. The arguments must meet the
+            parameters of the event being waited for.
+        timeout: Optional[:class:`float`]
+            The number of seconds to wait before timing out and returning `None`.
+
+        Returns
+        --------
+        Optional[Union[Message, bool]]
+            Returns the Message object, or a boolean.
+        """
         limit = time.time() + timeout
+        if check is None:
+            def _check(*args):
+                return True
+            check = _check
+
         while time.time() < limit:
-            cache = self.gateway.cache
+            cache = self.gateway.cache            
             if event == "INTERACTION_CREATE":
-                return nonce_or_id in cache.interaction_create
+                if check(cache.interaction_create[-1]):
+                    return True
             if event =="INTERACTION_SUCCESS":
-                return nonce_or_id in cache.interaction_success
+                if check(cache.interaction_success[-1]):
+                    return True
+
             if event == "MESSAGE_CREATE":
-                if cache.message_create.get(nonce_or_id):
-                    return Message(cache.message_create[nonce_or_id])
+                value = list(cache.message_create.values())[-1]
+                _msg = Message(value)
+                if check(_msg) is True:
+                    return _msg
             if event == "MESSAGE_UPDATE":
-                if cache.message_updates.get(nonce_or_id):
-                    return Message(cache.message_updates[nonce_or_id])
+                while len(cache.raw_message_updates) == 0:
+                    continue
+                _msg = Message(cache.raw_message_updates[-1])
+                if check(_msg) is True:
+                    return _msg
         return None

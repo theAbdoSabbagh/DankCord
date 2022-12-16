@@ -105,7 +105,7 @@ class Gateway:
 
         identify = self.recv_handler()
         if not identify:
-            raise InvalidToken("Invalid Discord account token used.")
+            raise InvalidToken("Invalid Discord account token used.") # type: ignore
 
         if identify["op"] != 0:
             self.logger.log(
@@ -184,12 +184,16 @@ class Gateway:
             elif event["t"] == "INTERACTION_SUCCESS":
                 self.cache.interaction_success.append(event["d"]["nonce"])
             elif event["t"] == "MESSAGE_CREATE":
-                self.cache.message_create[event["d"]["nonce"]] = event["d"]
-                self.cache.nonce_message_map[event["d"]["nonce"]] = event["d"]["id"]
+                try:
+                    self.cache.message_create[event["d"]["nonce"]] = event["d"]
+                    self.cache.nonce_message_map[event["d"]["nonce"]] = event["d"]["id"]
+                except:
+                    pass
             elif event["t"] == "MESSAGE_UPDATE":
                 if event["d"]["id"] not in self.cache.message_updates:
                     self.cache.message_updates[event["d"]["id"]] = []
                 self.cache.message_updates[event["d"]["id"]].append(event["d"])
+                self.cache.raw_message_updates.append(event["d"])
             else:
                 print("----------------- DEBUG START -----------------")
                 print(event)
