@@ -1,11 +1,30 @@
 class DankCordException(BaseException):
-  pass
+    pass
+
 
 class InvalidCommand(DankCordException):
-  pass
+    pass
+
+
+class InvalidComponent(DankCordException):
+    pass
+
 
 class InvalidToken(DankCordException):
-  pass
+    pass
+
+
+class MissingPermissions(DankCordException):
+    pass
+
 
 class UnknownChannel(DankCordException):
-  pass
+    pass
+
+
+class NonceTimeout(DankCordException):
+    pass
+
+
+class NoCommands(DankCordException):
+    pass
