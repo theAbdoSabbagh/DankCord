@@ -3,7 +3,7 @@ requires = ["setuptools", "orjson", "pyloggor", "websocket_client"]
 
 [project]
 name = "DankCord"
-version = "1.0.111"
+version = "0.0.2"
 description = "The first python library for Dank Memer selfbots. Incredibly fast, secure, strong, and reliable."
 license = {text = "MIT"}
 authors = [
