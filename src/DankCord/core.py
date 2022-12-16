@@ -41,7 +41,7 @@ class Core:
         else:
             return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
 
-    def _run_command(self, name: str, retry_attempts= 3, timeout:int = 10):
+    def _run_command(self, name: str, retry_attempts= 3, timeout:int = 10) -> Optional[Message]:
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
@@ -90,8 +90,8 @@ class Core:
                 )
             )
             try:
-                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", nonce)
-                return interaction
+                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", nonce, timeout)
+                return interaction # type: ignore
             except Exception as e:
                 print(f"Error in core.py _run_command: {e}")
                 continue
