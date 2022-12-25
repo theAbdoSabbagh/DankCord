@@ -187,7 +187,7 @@ class Client:
             raise DataAccessFailure("Failed to get user info.")
         self.user = User(resp.json())
 
-    def run_command(self, name: str, retry_attempts: int = 3, timeout: int = 10) -> Optional[Message]:
+    def run_command(self, name: str, retry_attempts: int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
         """Runs a slash command.
 
         Parameters
@@ -198,6 +198,7 @@ class Client:
             The amount of times to retry on failure.
         timeout: int = 10
             Duration before it times out.
+        kwargs: **kwargs
 
         Returns
         --------
@@ -207,6 +208,12 @@ class Client:
         command_info = self._get_command_info(name)
 
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
+        type_ = 1
+
+        for item in command_info["options"]:
+            if item["name"] == name:
+                type_ = item["type"]
+                break
 
         data = {
             "type": 2,
@@ -219,7 +226,7 @@ class Client:
                 "id": command_info["id"],
                 "name": name,
                 "type": 1,
-                "options": [],
+                "options": self._OptionsBuilder(name, type_, **kwargs),
                 "application_command": {
                     "id": command_info["id"],
                     "application_id": "270904126974590976",
