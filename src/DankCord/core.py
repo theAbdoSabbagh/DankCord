@@ -4,7 +4,7 @@ import requests
 from typing import Optional, Literal, Union, Callable
 from pyloggor import pyloggor
 
-from .Objects import Response, Config, Message
+from .Objects import Config, Message
 from .gateway import Gateway
 
 class Core:
@@ -78,18 +78,15 @@ class Core:
             return message.nonce == nonce
 
         for i in range(retry_attempts):
-            response = Response(
-                requests.post(  # type: ignore
+            response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    orjson.dumps(data),
-                    http_headers=self._tupalize(
-                        {
+                    data=orjson.dumps(data),
+                    json={
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
-                    ),
                 )
-            )
+            
             try:
                 interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
                 return interaction # type: ignore
