@@ -1,5 +1,5 @@
 import orjson, datetime, json, time
-import faster_than_requests as requests
+import requests
 
 from typing import Optional, Literal, Union, Callable
 from pyloggor import pyloggor

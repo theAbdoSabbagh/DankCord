@@ -1,6 +1,6 @@
 from typing import Union
 
-import faster_than_requests as requests
+import requests
 
 from .Objects import Config, Response
 

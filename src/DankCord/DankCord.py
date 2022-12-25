@@ -1,5 +1,5 @@
 import datetime, json, time, orjson
-import faster_than_requests as requests
+import requests
 
 from rich import print
 from string import printable
