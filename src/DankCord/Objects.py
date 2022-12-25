@@ -198,3 +198,17 @@ class CommandResult:
         self.death: bool = death
         self.gain: dict = gain
         self.loss: dict = loss
+
+class User:
+    """
+    Represents a class that has the data of a user.
+    """
+
+    def __init__(self, data: dict) -> None:
+        self.id: int = int(data.get("id", 0))
+        self.discriminator: int = int(data.get("discriminator", 0))
+        self.name: str = data.get("username", "")
+        self.bio: Optional[str] = data.get("bio", None)
+        self.phone: Optional[str] = data.get("phone", None)
+        self.email: Optional[str] = data.get("email", None)
+        self.verified: bool = data.get("verified", False)
