@@ -51,5 +51,5 @@ message = bot.run_sub_command(name="", sub_name="", **kwargs)
 - Documentation: coming soon.
 
 # Special thanks
-- [ThePrivatePanda](https://github.com/ThePrivatePanda): The co-founder of DankCord, and one of it's main maintainers.
+- [ThePrivatePanda](https://github.com/ThePrivatePanda): An ex-maintainer of the project.
 - All our other contributors, DankCord wouldn't have been what it is today without them.
