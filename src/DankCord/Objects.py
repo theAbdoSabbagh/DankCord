@@ -53,23 +53,6 @@ class Cache:
         self.raw_message_updates = []
 
 
-class Response:
-    """
-    Represents a Response class for an HTTP request.
-    faster_than_requests returns: [body, type, status, version, url, length, headers]
-    which is passed as param `response`
-    """
-
-    def __init__(self, response: list) -> None:
-        try:
-            self.data: dict = orjson.loads(response[0])
-        except:
-            self.data = response[0]
-        self.format = response[1]
-        self.code: int = int(response[2].split(" ")[0])
-        self.headers: str = response[6]
-
-
 class Author:
     """
     A class that represents the author of some context.
