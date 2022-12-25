@@ -1,7 +1,7 @@
 import datetime, json, time, orjson
 import requests
 
-# from rich import print
+from rich import print
 from string import printable
 from typing import Callable, Literal, Optional, Union
 from pyloggor import pyloggor
@@ -9,7 +9,7 @@ from requests import Response
 
 from .exceptions import InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
-from .Objects import Button, Config, Dropdown, Message
+from .Objects import Button, Config, Dropdown, Message, User
 from .core import Core
 
 class Client:
@@ -33,7 +33,6 @@ class Client:
         self.ws = self.gateway.ws
         self.session_id: Optional[str] = self.gateway.session_id
 
-        self.user_id: Optional[int] = self.gateway.user_id
         if not config.dm_mode:
             self.guild_id = self.gateway.guild_id
 
@@ -126,7 +125,7 @@ class Client:
             )
         if resp.status_code!= 200:
             raise Exception("Failed to get user info.")
-        self.username = resp.json()["username"]
+        self.user = User(resp.json())
 
     def run_command(self, name: str, retry_attempts= 3, timeout:int = 10) -> Optional[Message]:
         nonce = self._create_nonce()
