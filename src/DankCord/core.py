@@ -28,13 +28,26 @@ class Core:
         self.ws_cache = {}
         self.gateway = gateway
 
-    def _tupalize(self, dict):
-        return [(a, b) for a, b in dict.items()]
-
     def _create_nonce(self) -> str:
+        """Creates a nonce using Discord's algorithm.
+        
+        Returns
+        --------
+        nonce: str"""
         return str(int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000 - 1420070400000) << 22)
 
     def _get_command_info(self, name: str) -> dict:
+        """Retuns information about a given command.
+        
+        Parameters
+        --------
+        name: str
+            The name of the command.
+            
+        Returns
+        --------
+        information: dict
+        """
         if self.resource_intensivity == "MEM":
             return self.commands_data.get(name, {})
         else:
