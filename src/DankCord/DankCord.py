@@ -58,7 +58,7 @@ class Client:
         channel_id = channel_id or self.channel_id
         response = requests.get(  # type: ignore
                 f"https://discord.com/api/v9/channels/{channel_id}/application-commands/search?type=1&application_id=270904126974590976",
-                json={"Authorization", self.token},
+                headers={"Authorization": self.token, "Content-type": "application/json"},
         )
 
         if isinstance(response, str):
@@ -122,7 +122,7 @@ class Client:
     def _get_info(self) -> None:
         resp = requests.get(  # type: ignore
                 "https://discord.com/api/v10/users/@me",
-                json={"Authorization": self.token},
+                headers={"Content-type": "application/json", "Authorization": self.token},
             )
         if resp.status_code!= 200:
             raise Exception("Failed to get user info.")
@@ -169,7 +169,7 @@ class Client:
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    json={
+                    headers={"Content-type": "application/json", 
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
@@ -237,7 +237,7 @@ class Client:
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    json={
+                    headers={"Content-type": "application/json", 
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
@@ -315,7 +315,7 @@ class Client:
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    json={
+                    headers={"Content-type": "application/json", 
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
@@ -408,7 +408,7 @@ class Client:
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    json={
+                    headers={"Content-type": "application/json", 
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
@@ -447,7 +447,7 @@ class Client:
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    json={
+                    headers={"Content-type": "application/json", 
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }

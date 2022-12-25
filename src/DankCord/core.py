@@ -81,7 +81,7 @@ class Core:
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    json={
+                    headers={"Content-type": "application/json", 
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
