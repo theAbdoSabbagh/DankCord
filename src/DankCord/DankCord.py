@@ -128,7 +128,7 @@ class Client:
             raise Exception("Failed to get user info.")
         self.username = resp.json()["username"]
 
-    def run_command(self, name: str, retry_attempts=3, timeout: int = 10):
+    def run_command(self, name: str, retry_attempts= 3, timeout:int = 10) -> Optional[Message]:
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
@@ -162,6 +162,8 @@ class Client:
             },
             "nonce": nonce,
         }
+        def check(message: Message):
+            return message.nonce == nonce
 
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
@@ -172,10 +174,15 @@ class Client:
                             "Content-Type": "application/json",
                         }
                 )
-            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
-            if post_handling:
-                return post_handling
-            continue
+            
+            try:
+                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
+                return interaction # type: ignore
+            except Exception as e:
+                print(f"Error in core.py _run_command: {e}")
+                continue
+            
+        return None
 
     def run_sub_command(
         self,
