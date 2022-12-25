@@ -1,16 +1,15 @@
 import datetime, json, time, orjson
 import requests
 
-from rich import print
+# from rich import print
 from string import printable
 from typing import Callable, Literal, Optional, Union
 from pyloggor import pyloggor
-from threading import Thread
+from requests import Response
 
-from .DankMemer import DankMemer
 from .exceptions import InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
-from .Objects import Button, Config, Dropdown, Message, Response
+from .Objects import Button, Config, Dropdown, Message
 from .core import Core
 
 class Client:
@@ -38,7 +37,6 @@ class Client:
         if not config.dm_mode:
             self.guild_id = self.gateway.guild_id
 
-        self.dankmemer = DankMemer(config)
         self._get_commands()
         self._get_info()
 
@@ -58,27 +56,30 @@ class Client:
 
     def _get_commands(self, channel_id: Optional[str] = None) -> Optional[Response]:
         channel_id = channel_id or self.channel_id
-        response = self.dankmemer.get_commands(int(channel_id))
+        response = requests.get(  # type: ignore
+                f"https://discord.com/api/v9/channels/{channel_id}/application-commands/search?type=1&application_id=270904126974590976",
+                json={"Authorization", self.token},
+        )
 
         if isinstance(response, str):
             return response
 
-        if response.data.get("code") == 10003:
+        if response.json().get("code") == 10003:
             raise UnknownChannel("Bot doesn't have access to this channel.")
-        if response.data.get("code") == 50013:
+        if response.json().get("code") == 50013:
             raise MissingPermissions("Bot cannot view the channel or read it's content.")
 
-        if "application_commands" not in response.data:
+        if "application_commands" not in response.json():
             raise NoCommands("No commands found.")
 
         if self.resource_intensivity == "MEM":
             self.commands_data = {
-                command_data["name"]: command_data for command_data in response.data["application_commands"]
+                command_data["name"]: command_data for command_data in response.json()["application_commands"]
             }
         else:
             with open(f"{self.channel_id}_commands.json", "w") as f:
                 json.dump(
-                    {command_data["name"]: command_data for command_data in response.data["application_commands"]},
+                    {command_data["name"]: command_data for command_data in response.json()["application_commands"]},
                     f,
                     indent=4,
                     sort_keys=True,
@@ -119,15 +120,13 @@ class Client:
         return options
 
     def _get_info(self) -> None:
-        resp = Response(
-            requests.get(  # type: ignore
-                url="https://discord.com/api/v10/users/@me",
-                http_headers=self._tupalize({"Authorization": self.token}),
+        resp = requests.get(  # type: ignore
+                "https://discord.com/api/v10/users/@me",
+                json={"Authorization": self.token},
             )
-        )
-        if resp.code != 200:
+        if resp.status_code!= 200:
             raise Exception("Failed to get user info.")
-        self.username = resp.data["username"]
+        self.username = resp.json()["username"]
 
     def run_command(self, name: str, retry_attempts=3, timeout: int = 10):
         nonce = self._create_nonce()
@@ -165,18 +164,14 @@ class Client:
         }
 
         for i in range(retry_attempts):
-            response = Response(
-                requests.post(  # type: ignore
+            response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    orjson.dumps(data),
-                    http_headers=self._tupalize(
-                        {
+                    data=orjson.dumps(data),
+                    json={
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
-                    ),
                 )
-            )
             post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
             if post_handling:
                 return post_handling
@@ -232,16 +227,14 @@ class Client:
         }
 
         for i in range(retry_attempts):
-            response = Response(
-                requests.post(  # type: ignore
+            response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    orjson.dumps(data),
-                    http_headers=[
-                        ("Authorization", self.token),
-                        ("Content-Type", "application/json"),
-                    ],
+                    data=orjson.dumps(data),
+                    json={
+                            "Authorization": self.token,
+                            "Content-Type": "application/json",
+                        }
                 )
-            )
             post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
             if post_handling:
                 return post_handling
@@ -312,16 +305,14 @@ class Client:
         }
 
         for i in range(retry_attempts):
-            response = Response(
-                requests.post(  # type: ignore
+            response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    orjson.dumps(data),
-                    http_headers=[
-                        ("Authorization", self.token),
-                        ("Content-Type", "application/json"),
-                    ],
+                    data=orjson.dumps(data),
+                    json={
+                            "Authorization": self.token,
+                            "Content-Type": "application/json",
+                        }
                 )
-            )
             post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
             if post_handling:
                 return post_handling
@@ -338,13 +329,13 @@ class Client:
     ) -> Optional[Message]:
         _message = None
 
-        if isinstance(response.data, dict):
-            retry_after = int(response.data.get("retry_after", 0))
-            errors = response.data.get("errors")
-            code = response.data.get("code")
+        if isinstance(response.json(), dict):
+            retry_after = int(response.json().get("retry_after", 0))
+            errors = response.json().get("errors")
+            code = response.json().get("code")
             if errors:
                 # TODO horrible way, sometimes the error does NOT have data, so this needs fixing
-                if response.data["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
+                if response.json()["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
                     raise InvalidComponent("Invalid component.")
                 if retry_after > 0:
                     self.logger.log(level="Warning", msg=f"Ratelimited while running {name}, retrying after {retry_after}")
@@ -407,23 +398,19 @@ class Client:
             "data": {"component_type": 2, "custom_id": button.custom_id},
         }
         for i in range(retry_attempts):
-            response = Response(
-                requests.post(  # type: ignore
+            response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    orjson.dumps(data),
-                    http_headers=self._tupalize(
-                        {
+                    data=orjson.dumps(data),
+                    json={
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
-                    ),
                 )
-            )
-            if response.code == 204:
+            if response.status_code== 204:
                 break
-            time.sleep(int(response.data.get('retry_after', 0)))
+            time.sleep(int(response.json().get('retry_after', 0)))
         
-        return True if response.code == 204 else False # type: ignore
+        return True if response.status_code== 204 else False # type: ignore
 
     def select(
         self,
@@ -450,18 +437,14 @@ class Client:
             },
         }
         for i in range(retry_attempts):
-            response = Response(
-                requests.post(  # type: ignore
+            response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    orjson.dumps(data),
-                    http_headers=self._tupalize(
-                        {
+                    data=orjson.dumps(data),
+                    json={
                             "Authorization": self.token,
                             "Content-Type": "application/json",
                         }
-                    ),
                 )
-            )
             post_handling = self._post_handling(
                 timeout,
                 response,
