@@ -2,12 +2,11 @@ import datetime, json, time, orjson
 import requests
 
 from rich import print
-from string import printable
 from typing import Callable, Literal, Optional, Union
 from pyloggor import pyloggor
 from requests import Response
 
-from .exceptions import InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
+from .exceptions import DataAccessFailure, InvalidComponent, MissingPermissions, NoCommands, NonceTimeout, UnknownChannel
 from .gateway import Gateway
 from .Objects import Button, Config, Dropdown, Message, User
 from .core import Core
@@ -44,16 +43,35 @@ class Client:
         )
         self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger, self.gateway)
 
-    def _clean(self, content: str) -> str:
-        return "".join([char for char in content if char in printable])
-
-    def _tupalize(self, dict):
-        return [(a, b) for a, b in dict.items()]
-
     def _create_nonce(self) -> str:
+        """Creates a nonce using Discord's algorithm.
+        
+        Returns
+        --------
+        nonce: str"""
         return str(int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000 - 1420070400000) << 22)
 
     def _get_commands(self, channel_id: Optional[str] = None) -> Optional[Response]:
+        """Gets all slash command data in a channel, dumps them into memory or a file based on user settings.
+        
+        Parameters
+        ---------
+        channel_id: Optional[`str`]
+            The channel ID, used for finding a channel and getting slash commands from.
+
+        Raises
+        ---------
+        UnknownChannel
+            Bot doesn't have access to this channel.
+        MissingPermissions
+            Bot cannot view the channel or read it's content.
+        NoCommands
+            No commands found.
+
+        Returns
+        ---------
+        response: Optional[`Response`]
+        """
         channel_id = channel_id or self.channel_id
         response = requests.get(  # type: ignore
                 f"https://discord.com/api/v9/channels/{channel_id}/application-commands/search?type=1&application_id=270904126974590976",
@@ -63,22 +81,24 @@ class Client:
         if isinstance(response, str):
             return response
 
-        if response.json().get("code") == 10003:
+        data = response.json()
+
+        if data.get("code") == 10003:
             raise UnknownChannel("Bot doesn't have access to this channel.")
-        if response.json().get("code") == 50013:
+        if data.get("code") == 50013:
             raise MissingPermissions("Bot cannot view the channel or read it's content.")
 
-        if "application_commands" not in response.json():
+        if "application_commands" not in data:
             raise NoCommands("No commands found.")
 
         if self.resource_intensivity == "MEM":
             self.commands_data = {
-                command_data["name"]: command_data for command_data in response.json()["application_commands"]
+                command_data["name"]: command_data for command_data in data["application_commands"]
             }
         else:
             with open(f"{self.channel_id}_commands.json", "w") as f:
                 json.dump(
-                    {command_data["name"]: command_data for command_data in response.json()["application_commands"]},
+                    {command_data["name"]: command_data for command_data in data["application_commands"]},
                     f,
                     indent=4,
                     sort_keys=True,
@@ -87,12 +107,35 @@ class Client:
         return response
 
     def _get_command_info(self, name: str) -> dict:
+        """Retuns information about a given command.
+        
+        Parameters
+        --------
+        name: str
+            The name of the command.
+            
+        Returns
+        --------
+        information: dict
+        """
         if self.resource_intensivity == "MEM":
             return self.commands_data.get(name, {})
         else:
             return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
 
     def _OptionsBuilder(self, name, type_, **kwargs):
+        """Builds the data used in slash command API requests.
+        
+        Parameters
+        --------
+        name: Any
+        type_: Any
+        kwargs: **kwargs
+
+        Returns
+        --------
+        options: list[`dict`[`str`, `Any`]]
+        """
         options = [{"type": type_, "name": name, "options": []}]
 
         type_types = {str: 3, bool: 5, list: 2, int: 10}
@@ -106,6 +149,16 @@ class Client:
         return options
 
     def _RawOptionsBuilder(self, **kwargs):
+        """Builds the raw data used in slash command API requests.
+        
+        Parameters
+        --------
+        kwargs: **kwargs
+
+        Returns
+        --------
+        options: list
+        """
         options = []
 
         type_types = {str: 3, bool: 5, list: 2, int: 10}
@@ -119,15 +172,37 @@ class Client:
         return options
 
     def _get_info(self) -> None:
+        """Saves information about the bot user account.
+        
+        Raises
+        -------
+        DataAccessFailure
+            Failed to get user info.
+        """
         resp = requests.get(  # type: ignore
                 "https://discord.com/api/v10/users/@me",
                 headers={"Content-type": "application/json", "Authorization": self.token},
             )
         if resp.status_code!= 200:
-            raise Exception("Failed to get user info.")
+            raise DataAccessFailure("Failed to get user info.")
         self.user = User(resp.json())
 
-    def run_command(self, name: str, retry_attempts= 3, timeout:int = 10) -> Optional[Message]:
+    def run_command(self, name: str, retry_attempts: int = 3, timeout: int = 10) -> Optional[Message]:
+        """Runs a slash command.
+
+        Parameters
+        --------
+        name: str
+            The command name.
+        retry_attempts: int = 3
+            The amount of times to retry on failure.
+        timeout: int = 10
+            Duration before it times out.
+
+        Returns
+        --------
+        message: Optional[`Message`]
+        """
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
@@ -178,19 +253,29 @@ class Client:
                 interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
                 return interaction # type: ignore
             except Exception as e:
-                print(f"Error in core.py _run_command: {e}")
+                print(f"Error in run_command: {e}")
                 continue
             
         return None
 
-    def run_sub_command(
-        self,
-        name: str,
-        sub_name: str,
-        retry_attempts=3,
-        timeout: int = 10,
-        **kwargs,
-    ):
+    def run_sub_command(self, name: str, sub_name: str, retry_attempts:int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
+        """Runs a slash command.
+
+        Parameters
+        --------
+        name: str
+            The command name.
+        sub_name: str
+            The sub command name.
+        retry_attempts: int = 3
+            The amount of times to retry on failure.
+        timeout: int = 10
+            Duration before it times out.
+
+        Returns
+        --------
+        message: Optional[`Message`]
+        """
 
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
@@ -231,30 +316,46 @@ class Client:
             },
             "nonce": nonce,
         }
+        def check(message: Message):
+            return message.nonce == nonce
 
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", 
-                            "Authorization": self.token,
-                            "Content-Type": "application/json",
-                        }
+                    headers={"Content-type": "application/json", "Authorization": self.token,}
                 )
-            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
-            if post_handling:
-                return post_handling
-            continue
+            
+            try:
+                message: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
+                return message # type: ignore
+            except Exception as e:
+                print(f"Error in run_sub_command: {e}")
+                continue
+        
+        return None
 
-    def run_slash_group_command(
-        self,
-        name: str,
-        sub_name: str,
-        sub_group_name: str,
-        retry_attempts=3,
-        timeout: int = 10,
-        **kwargs,
-    ):
+    def run_slash_group_command(self, name: str, sub_name: str, sub_group_name: str, retry_attempts: int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
+        """Runs a slash group command.
+
+        Parameters
+        --------
+        name: str
+            The command name.
+        sub_name: str
+            The sub command name.
+        sub_group_name: str
+            The sub group command name.
+        retry_attempts: int = 3
+            The amount of times to retry on failure.
+        timeout: int = 10
+            Duration before it times out.
+
+        Returns
+        --------
+        message: Optional[`Message`]
+        """
+
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
@@ -309,87 +410,42 @@ class Client:
             },
             "nonce": nonce,
         }
+        def check(message: Message):
+            return message.nonce == nonce
 
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", 
-                            "Authorization": self.token,
-                            "Content-Type": "application/json",
-                        }
+                    headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
-            post_handling = self._post_handling(timeout, response, name, nonce, ["MESSAGE_CREATE"])
-            if post_handling:
-                return post_handling
-            continue
-
-    def _post_handling(
-        self,
-        timeout: int,
-        response: Response,
-        name: str,
-        nonce: str,
-        event_type: list,
-        message_id: str = "",
-    ) -> Optional[Message]:
-        _message = None
-
-        if isinstance(response.json(), dict):
-            retry_after = int(response.json().get("retry_after", 0))
-            errors = response.json().get("errors")
-            code = response.json().get("code")
-            if errors:
-                # TODO horrible way, sometimes the error does NOT have data, so this needs fixing
-                if response.json()["errors"]["data"]["_errors"][0]["code"] == "COMPONENT_VALIDATION_FAILED":
-                    raise InvalidComponent("Invalid component.")
-                if retry_after > 0:
-                    self.logger.log(level="Warning", msg=f"Ratelimited while running {name}, retrying after {retry_after}")
-                    time.sleep(retry_after)
-
-                return None
-            if code == 10003:
-                raise UnknownChannel("Bot doesn't have access to this channel.")
-
-        lim = time.time() + timeout
-        if message_id == "":
-            while time.time() < lim:
-                if nonce in self.ws_cache:
-                    for i in event_type:
-                        if i in self.ws_cache[nonce]:
-                            _message = self.ws_cache[nonce][i]
-                            return Message(_message)
-
-        if not _message and message_id == "":
-            raise NonceTimeout("Did not receive nonce in time.")
-
-        lim = time.time() + timeout
-        while time.time() < lim:
+            
             try:
-                for key, value in self.ws_cache.items():
-                    try:
-                        event = key.split(" ")[1]
-                        if value["id"].strip() == message_id.strip() and event in event_type:
-                            _message = value
-                            return Message(_message)
-                        if (
-                            value["message_reference"]["message_id"].strip() == message_id.strip
-                            and value["type"] == 19
-                            and event in event_type
-                        ):
-                            _message = value
-                            return Message(_message)
-                    except Exception as e:
-                        pass
-            except:
-                pass
-
-        if not _message:
-            raise NonceTimeout("Did not receive nonce in time.")
-
+                message: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
+                return message # type: ignore
+            except Exception as e:
+                print(f"Error in run_slash_group_command: {e}")
+                continue
+        
         return None
 
     def click(self, button: Button, retry_attempts: int = 10, timeout: int = 10) -> bool:
+        """Clicks a button.
+        
+        Parameters
+        --------
+        button: Button
+            The button to click.
+        retry_attempts: int = 10
+            The amount of times to retry on failure.
+        timeout: int = 10
+            Duration before it times out.
+
+        Returns
+        --------
+        success_state: bool
+            Whether the button was clicked successfully or not.
+        """
         nonce = self._create_nonce()
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
         data = {
@@ -403,28 +459,42 @@ class Client:
             "session_id": self.session_id,
             "data": {"component_type": 2, "custom_id": button.custom_id},
         }
+        end = time.time() + timeout
         for i in range(retry_attempts):
+            if time.time() > end:
+                return False
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", 
-                            "Authorization": self.token,
-                            "Content-Type": "application/json",
-                        }
+                    headers={"Content-type": "application/json", "Authorization": self.token}
                 )
-            if response.status_code== 204:
+            if response.status_code == 204:
                 break
-            time.sleep(int(response.json().get('retry_after', 0)))
+            retry_after = int(response.json().get('retry_after', 0))
+            end += retry_after
+            time.sleep(retry_after)
         
-        return True if response.status_code== 204 else False # type: ignore
+        return True if response.status_code == 204 else False # type: ignore
 
-    def select(
-        self,
-        dropdown: Dropdown,
-        options: list,
-        retry_attempts: int = 10,
-        timeout: int = 10,
-    ) -> Optional[Message]:
+    def select(self, dropdown: Dropdown, options: list, retry_attempts: int = 10, timeout: int = 10) -> bool:
+        """Selects an option from a dropdown.
+
+        Parameters
+        --------
+        dropdown: Dropdown
+            The dropdown to choose from.
+        options: list
+            A list of options to use in the API request for the dropdown to be chosen from.
+        retry_attempts: int = 10
+            The amount of times to retry on failure.
+        timeout: int = 10
+            Duration before it times out.
+        
+        Returns
+        -------
+        success_state: bool
+            Whether the option was chosen successfully or not.
+        """
         nonce = self._create_nonce()
         data = {
             "type": 3,
@@ -442,25 +512,23 @@ class Client:
                 "values": options,
             },
         }
+
+        end = time.time() + timeout
         for i in range(retry_attempts):
+            if time.time() > end:
+                return False
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", 
-                            "Authorization": self.token,
-                            "Content-Type": "application/json",
-                        }
+                    headers={"Content-type": "application/json", "Authorization": self.token}
                 )
-            post_handling = self._post_handling(
-                timeout,
-                response,
-                "dropdown interactions",
-                nonce,
-                ["MESSAGE_CREATE", "MESSAGE_UPDATE"],
-                message_id=dropdown.message_id,
-            )
-            if post_handling:
-                return post_handling
+            if response.status_code == 204:
+                break
+            retry_after = int(response.json().get('retry_after', 0))
+            end += retry_after
+            time.sleep(retry_after)
+        
+        return True if response.status_code == 204 else False # type: ignore
 
     def wait_for(
         self,
