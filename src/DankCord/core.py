@@ -40,11 +40,33 @@ class Core:
         else:
             return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
 
-    def _run_command(self, name: str, retry_attempts= 3, timeout:int = 10) -> Optional[Message]:
+    def _run_command(self, name: str, retry_attempts: int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
+        """Runs a slash command.
+
+        Parameters
+        --------
+        name: str
+            The command name.
+        retry_attempts: int = 3
+            The amount of times to retry on failure.
+        timeout: int = 10
+            Duration before it times out.
+        kwargs: **kwargs
+
+        Returns
+        --------
+        message: Optional[`Message`]
+        """
         nonce = self._create_nonce()
         command_info = self._get_command_info(name)
 
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
+        type_ = 1
+
+        for item in command_info["options"]:
+            if item["name"] == name:
+                type_ = item["type"]
+                break
 
         data = {
             "type": 2,
@@ -57,7 +79,7 @@ class Core:
                 "id": command_info["id"],
                 "name": name,
                 "type": 1,
-                "options": [],
+                "options": self._OptionsBuilder(name, type_, **kwargs),
                 "application_command": {
                     "id": command_info["id"],
                     "application_id": "270904126974590976",
@@ -91,7 +113,7 @@ class Core:
                 interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
                 return interaction # type: ignore
             except Exception as e:
-                print(f"Error in core.py _run_command: {e}")
+                print(f"Error in run_command: {e}")
                 continue
             
         return None
