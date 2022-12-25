@@ -28,3 +28,6 @@ class NonceTimeout(DankCordException):
 
 class NoCommands(DankCordException):
     pass
+
+class DataAccessFailure(DankCordException):
+    pass
