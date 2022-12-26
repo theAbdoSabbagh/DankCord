@@ -1,4 +1,4 @@
-![DankCord](assets/DankCord.png "DankCord")
+![DankCord](https://raw.githubusercontent.com/Sxvxgee/DankCord/master/assets/DankCord.png)
 
 [![Discord Server](https://discord.com/api/guilds/1046759026807013376/embed.png)](https://discord.gg/XaQ6FAP3sm/)
 [![PyPi version](https://img.shields.io/pypi/v/DankCord.svg)](https://pypi.org/user/Sxvxge/)
