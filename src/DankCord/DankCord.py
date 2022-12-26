@@ -1,4 +1,4 @@
-import datetime, json, time, orjson
+import datetime, json, time
 import requests
 
 from rich import print
@@ -181,7 +181,7 @@ class Client:
         """
         resp = requests.get(  # type: ignore
                 "https://discord.com/api/v10/users/@me",
-                headers={"Content-type": "application/json", "Authorization": self.token},
+                headers={"Authorization": self.token, "Content-type": "application/json"},
             )
         if resp.status_code!= 200:
             raise DataAccessFailure("Failed to get user info.")
@@ -209,11 +209,14 @@ class Client:
 
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
         type_ = 1
+        options = []
 
-        for item in command_info["options"]:
-            if item["name"] == name:
-                type_ = item["type"]
-                break
+        if command_info.get("options"):
+            for item in command_info["options"]:
+                if item["name"] == name:
+                    type_ = item["type"]
+                    break
+            options = self._OptionsBuilder(name, type_, **kwargs)
 
         data = {
             "type": 2,
@@ -226,7 +229,7 @@ class Client:
                 "id": command_info["id"],
                 "name": name,
                 "type": 1,
-                "options": self._OptionsBuilder(name, type_, **kwargs),
+                "options": options,
                 "application_command": {
                     "id": command_info["id"],
                     "application_id": "270904126974590976",
@@ -249,11 +252,8 @@ class Client:
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", 
-                            "Authorization": self.token,
-                            "Content-Type": "application/json",
-                        }
+                    json=data,
+                    headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
             
             try:
@@ -329,8 +329,8 @@ class Client:
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", "Authorization": self.token,}
+                    json=data,
+                    headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
             
             try:
@@ -423,7 +423,7 @@ class Client:
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    data=orjson.dumps(data),
+                    json=data,
                     headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
             
@@ -472,8 +472,8 @@ class Client:
                 return False
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", "Authorization": self.token}
+                    json=data,
+                    headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
             if response.status_code == 204:
                 break
@@ -526,8 +526,8 @@ class Client:
                 return False
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", "Authorization": self.token}
+                    json=data,
+                    headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
             if response.status_code == 204:
                 break

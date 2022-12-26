@@ -1,4 +1,4 @@
-import orjson, datetime, json, time
+import datetime, json, time
 import requests
 
 from typing import Optional, Literal, Union, Callable
@@ -115,13 +115,10 @@ class Core:
         for i in range(retry_attempts):
             response = requests.post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
-                    data=orjson.dumps(data),
-                    headers={"Content-type": "application/json", 
-                            "Authorization": self.token,
-                            "Content-Type": "application/json",
-                        }
+                    json=data,
+                    headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
-            
+
             try:
                 interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
                 return interaction # type: ignore
