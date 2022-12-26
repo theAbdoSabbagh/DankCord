@@ -1,8 +1,6 @@
 from typing import Literal, Optional, Union
 from rich import print
 
-import orjson
-
 class Config:
     def __init__(
         self,
