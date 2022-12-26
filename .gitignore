@@ -10,3 +10,4 @@ src/DankCord/.DS_Store
 base-folder
 dist
 html
+updatePackage.py
