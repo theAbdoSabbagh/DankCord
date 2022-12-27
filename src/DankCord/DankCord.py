@@ -288,11 +288,14 @@ class Client:
         command_info = self._get_command_info(name)
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
         type_ = 1
+        options = []
 
-        for item in command_info["options"]:
-            if item["name"] == sub_name:
-                type_ = item["type"]
-                break
+        if command_info.get("options"):
+            for item in command_info["options"]:
+                if item["name"] == name:
+                    type_ = item["type"]
+                    break
+            options = self._OptionsBuilder(name, type_, **kwargs)
 
         data = {
             "type": 2,
@@ -305,7 +308,7 @@ class Client:
                 "id": command_info["id"],
                 "name": name,
                 "type": command_info["type"],
-                "options": self._OptionsBuilder(sub_name, type_, **kwargs),
+                "options": options,
                 "application_command": {
                     "id": command_info["id"],
                     "application_id": "270904126974590976",
@@ -368,13 +371,16 @@ class Client:
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
         sub_type = 1
         sub_group_type = 1
+        options = []
 
-        for item in command_info["options"]:
-            if item["name"] == sub_name:
-                sub_type = item["type"]
-            for item_ in item["options"]:
-                if item_["name"] == sub_group_name:
-                    sub_group_type = item_["type"]
+        if command_info.get("options"):
+            for item in command_info["options"]:
+                if item["name"] == sub_name:
+                    sub_type = item["type"]
+                for item_ in item["options"]:
+                    if item_["name"] == sub_group_name:
+                        sub_group_type = item_["type"]
+            options = self._RawOptionsBuilder(**kwargs)
 
         data = {
             "type": 2,
@@ -395,7 +401,7 @@ class Client:
                             {
                                 "type": sub_group_type,
                                 "name": sub_group_name,
-                                "options": self._RawOptionsBuilder(**kwargs),
+                                "options": options,
                             }
                         ],
                     }
@@ -487,6 +493,13 @@ class Client:
         """Selects an option from a dropdown.
 
         Parameters
+        dropdown: Dropdown
+            The dropdown to choose from.
+        options: list
+            A list of options to use in the API request for the dropdown to be chosen from.
+        retry_attempts: int = 10
+            The amount of times to retry on failure.
+        timeout: int = 10
         --------
         dropdown: Dropdown
             The dropdown to choose from.
@@ -544,40 +557,37 @@ class Client:
         timeout: float = 10
     ) -> Optional[Union[Message, bool]]:
         """
-
         Waits for a WebSocket event to be dispatched.
 
         This could be used to wait for a message to be sent or a message to be edited,
         or even to confirm an interaction being created or successful.
 
-        The ``timeout`` parameter specifies how long to wait for until the desired event
+        The `timeout` parameter specifies how long to wait for until the desired event
         is dispatched; if the event was not dispatched before the timeout duration is over,
         it returns `None`.
 
         This function returns the **first event that meets the requirements**.
 
-        Examples
+        Example
         ---------
 
-        Waiting for a message to be sent: ::
+        Waiting for a message to be sent:
 
             def DankMemerShop():
                 def check(message: Message):
                     # The author ID is the ID of Dank Memer
                     return message.author.id == 270904126974590976 and "shop" in message.embeds[0].title.lower()
                 
-                message = bot.wait_for("MESSAGE_CREATE", check = check)
-                # in this case the message is of the type `Message`
-
+                message: Message = bot.wait_for("MESSAGE_CREATE", check = check)
 
         Parameters
         ------------
-        event: :class:`str`
+        event: str
             The event name.
-        check: Optional[Callable[..., :class:`bool`]]
+        check: Optional[Callable[..., `bool`]]
             A predicate to check what to wait for. The arguments must meet the
             parameters of the event being waited for.
-        timeout: Optional[:class:`float`]
+        timeout: Optional[`float`]
             The number of seconds to wait before timing out and returning `None`.
 
         Returns
