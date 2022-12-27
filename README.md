@@ -15,17 +15,17 @@ python3 -m pip install -U DankCord
 # windows
 pip install -U DankCord
 ```
-To install the development version, do the following:
+To install the Github version, do the following:
 ```sh
 $ git clone https://github.com/Sxvxgee/DankCord
 $ cd DankCord
-$ git branch -a # choose development
 $ python3 -m pip install -U .
 ```
 # Quick Example
 ```py
 from DankCord import Client, Config
 from pyloggor import pyloggor
+from DankCord.Objects import Message
 
 client = Client(
     Config("TOKEN", 00000000000), # Second argument is channel ID, must be int
@@ -38,11 +38,11 @@ client = Client(
         level_adjustment_space=9,
     ),
 )
-message = bot.core.fish()
-message = bot.core.beg()
-message = bot.core.hunt()
-message = bot.run_command(name="", **kwargs)
-message = bot.run_sub_command(name="", sub_name="", **kwargs)
+message: Message = bot.core.fish()
+message: Message = bot.core.beg()
+message: Message = bot.core.hunt()
+message: Message = bot.run_command(name = "", **kwargs)
+message: Message = bot.run_sub_command(name = "", sub_name = "", **kwargs)
 ```
 
 # Links
