@@ -75,11 +75,14 @@ class Core:
 
         retry_attempts = retry_attempts if retry_attempts > 0 else 1
         type_ = 1
+        options = []
 
-        for item in command_info["options"]:
-            if item["name"] == name:
-                type_ = item["type"]
-                break
+        if command_info.get("options"):
+            for item in command_info["options"]:
+                if item["name"] == name:
+                    type_ = item["type"]
+                    break
+            options = self._OptionsBuilder(name, type_, **kwargs)
 
         data = {
             "type": 2,
@@ -92,7 +95,7 @@ class Core:
                 "id": command_info["id"],
                 "name": name,
                 "type": 1,
-                "options": self._OptionsBuilder(name, type_, **kwargs),
+                "options": options,
                 "application_command": {
                     "id": command_info["id"],
                     "application_id": "270904126974590976",
@@ -118,7 +121,7 @@ class Core:
                     json=data,
                     headers={"Authorization": self.token, "Content-type": "application/json"}
                 )
-
+            
             try:
                 interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
                 return interaction # type: ignore
@@ -135,40 +138,37 @@ class Core:
         timeout: float = 10
     ) -> Optional[Union[Message, bool]]:
         """
-
         Waits for a WebSocket event to be dispatched.
 
         This could be used to wait for a message to be sent or a message to be edited,
         or even to confirm an interaction being created or successful.
 
-        The ``timeout`` parameter specifies how long to wait for until the desired event
+        The `timeout` parameter specifies how long to wait for until the desired event
         is dispatched; if the event was not dispatched before the timeout duration is over,
         it returns `None`.
 
         This function returns the **first event that meets the requirements**.
 
-        Examples
+        Example
         ---------
 
-        Waiting for a message to be sent: ::
+        Waiting for a message to be sent:
 
             def DankMemerShop():
                 def check(message: Message):
                     # The author ID is the ID of Dank Memer
                     return message.author.id == 270904126974590976 and "shop" in message.embeds[0].title.lower()
                 
-                message = bot.wait_for("MESSAGE_CREATE", check = check)
-                # in this case the message is of the type `Message`
-
+                message: Message = bot.wait_for("MESSAGE_CREATE", check = check)
 
         Parameters
         ------------
-        event: :class:`str`
+        event: str
             The event name.
-        check: Optional[Callable[..., :class:`bool`]]
+        check: Optional[Callable[..., `bool`]]
             A predicate to check what to wait for. The arguments must meet the
             parameters of the event being waited for.
-        timeout: Optional[:class:`float`]
+        timeout: Optional[`float`]
             The number of seconds to wait before timing out and returning `None`.
 
         Returns
