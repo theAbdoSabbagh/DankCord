@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='DankCord',
-    version='0.0.2.3',
+    version='0.0.2.3.5',
     description='The first python library for Dank Memer selfbots. Incredibly fast, secure, strong, and reliable.',
     author='Sxvxge',
     author_email='sxvxge69@gmail.com',
