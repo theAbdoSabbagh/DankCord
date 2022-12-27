@@ -27,7 +27,7 @@ from DankCord import Client, Config
 from pyloggor import pyloggor
 from DankCord.Objects import Message
 
-client = Client(
+bot = Client(
     Config("TOKEN", 00000000000), # Second argument is channel ID, must be int
     pyloggor(
         show_file=False,
