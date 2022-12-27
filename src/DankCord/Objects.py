@@ -60,7 +60,7 @@ class Author:
         self.name: Optional[str] = data.get("name", None)
         self.discriminator: Optional[str] = data.get("discriminator", None)
         self.icon_url: Optional[str] = data.get("icon_url", None)
-        self.id: Optional[int] = int(data.get("id", None))
+        self.id: Optional[int] = int(data.get("id", 0))
     
     def __repr__(self) -> str:
         return f"{self.name}#{self.discriminator}"
@@ -162,9 +162,9 @@ class Message:
         self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
         self.content: Optional[str] = data.get("content", None)
         self.nonce: Optional[str] = data.get("nonce", None)
-        self.id: Optional[int] = int(data.get("id", None))
+        self.id: Optional[int] = int(data.get("id", 0))
         self.timestamp: Optional[str] = data.get("timestamp", None)
-        self.channel_id: Optional[int] = int(data.get("channel_id", None))
+        self.channel_id: Optional[int] = int(data.get("channel_id", 0))
         self.embeds: list[Embed] = [Embed(i) for i in data.get("embeds", [])]
         self.components: list[ActionRow] = [ActionRow(i, self.id) for i in data.get("components", [])]
         self.buttons: list[Button] = [
@@ -202,8 +202,8 @@ class User:
     """
 
     def __init__(self, data: dict) -> None:
-        self.id: Optional[int] = int(data.get("id", None))
-        self.discriminator: Optional[int] = int(data.get("discriminator", None))
+        self.id: Optional[int] = int(data.get("id", 0))
+        self.discriminator: Optional[int] = int(data.get("discriminator", 0))
         self.name: Optional[str] = data.get("username", None)
         self.bio: Optional[str] = data.get("bio", None)
         self.phone: Optional[str] = data.get("phone", None)
