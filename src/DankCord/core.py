@@ -205,7 +205,7 @@ class Core:
         return None
 
     # Raw commands
-    def fish(self, retry_attempts:int = 3, timeout:int = 10):
+    def fish(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `fish` command.
         
@@ -229,9 +229,10 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("fish", retry_attempts, timeout)
+        message: Message = self._run_command("fish", retry_attempts, timeout)
+        return message
         
-    def hunt(self, retry_attempts:int = 3, timeout:int = 10):
+    def hunt(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `hunt` command.
         
@@ -255,9 +256,10 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("hunt", retry_attempts, timeout)
+        message: Message = self._run_command("hunt", retry_attempts, timeout)
+        return message
         
-    def dig(self, retry_attempts:int = 3, timeout:int = 10):
+    def dig(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `dig` command.
         
@@ -281,9 +283,10 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("dig", retry_attempts, timeout)
+        message: Message = self._run_command("dig", retry_attempts, timeout)
+        return message
         
-    def beg(self, retry_attempts:int = 3, timeout:int = 10):
+    def beg(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `beg` command.
         
@@ -307,10 +310,11 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("beg", retry_attempts, timeout)
+        message: Message = self._run_command("beg", retry_attempts, timeout)
+        return message
     
     # Button commands
-    def search(self, retry_attempts:int = 3, timeout:int = 10):
+    def search(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `search` command.
         
@@ -334,9 +338,10 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("search", retry_attempts, timeout)
+        message: Message = self._run_command("search", retry_attempts, timeout)
+        return message
 
-    def crime(self, retry_attempts: int = 3, timeout:int = 10):
+    def crime(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `crime` command.
         
@@ -360,9 +365,10 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("crime", retry_attempts, timeout)
+        message: Message = self._run_command("crime", retry_attempts, timeout)
+        return message
 
-    def postmemes(self, retry_attempts: int = 3, timeout:int = 10):
+    def postmemes(self, retry_attempts: int = 3, timeout: int = 10):
         """
         Runs the `postmemes` command.
         
@@ -386,4 +392,5 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        return self._run_command("postmemes", retry_attempts, timeout)
+        message: Message = self._run_command("postmemes", retry_attempts, timeout)
+        return message
