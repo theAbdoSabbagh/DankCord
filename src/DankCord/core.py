@@ -6,8 +6,9 @@ from pyloggor import pyloggor
 
 from .Objects import Config, Message
 from .gateway import Gateway
+from .api import API
 
-class Core:
+class Core(API):
     def __init__(self,
         /,
         config: Config,
@@ -28,14 +29,6 @@ class Core:
         self.ws_cache = {}
         self.gateway = gateway
 
-    def _create_nonce(self) -> str:
-        """Creates a nonce using Discord's algorithm.
-        
-        Returns
-        --------
-        nonce: str"""
-        return str(int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000 - 1420070400000) << 22)
-
     def _get_command_info(self, name: str) -> dict:
         """Retuns information about a given command.
         
@@ -52,84 +45,6 @@ class Core:
             return self.commands_data.get(name, {})
         else:
             return json.load(open(f"{self.channel_id}_commands.json", "r+")).get(name, {})
-
-    def _run_command(self, name: str, retry_attempts: int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
-        """Runs a slash command.
-
-        Parameters
-        --------
-        name: str
-            The command name.
-        retry_attempts: int = 3
-            The amount of times to retry on failure.
-        timeout: int = 10
-            Duration before it times out.
-        kwargs: **kwargs
-
-        Returns
-        --------
-        message: Optional[`Message`]
-        """
-        nonce = self._create_nonce()
-        command_info = self._get_command_info(name)
-
-        retry_attempts = retry_attempts if retry_attempts > 0 else 1
-        type_ = 1
-        options = []
-
-        if command_info.get("options"):
-            for item in command_info["options"]:
-                if item["name"] == name:
-                    type_ = item["type"]
-                    break
-            options = self._OptionsBuilder(name, type_, **kwargs)
-
-        data = {
-            "type": 2,
-            "application_id": "270904126974590976",
-            "guild_id": str(self.guild_id),
-            "channel_id": self.channel_id,
-            "session_id": self.session_id,
-            "data": {
-                "version": command_info["version"],
-                "id": command_info["id"],
-                "name": name,
-                "type": 1,
-                "options": options,
-                "application_command": {
-                    "id": command_info["id"],
-                    "application_id": "270904126974590976",
-                    "version": command_info["version"],
-                    "default_permission": command_info["default_permission"],
-                    "default_member_permissions": command_info["default_member_permissions"],
-                    "type": 1,
-                    "name": name,
-                    "nsfw": command_info["nsfw"],
-                    "description": command_info["description"],
-                    "dm_permission": command_info["dm_permission"],
-                },
-                "attachments": [],
-            },
-            "nonce": nonce,
-        }
-        def check(message: Message):
-            return message.nonce == nonce
-
-        for i in range(retry_attempts):
-            response = requests.post(  # type: ignore
-                    "https://discord.com/api/v9/interactions",
-                    json=data,
-                    headers={"Authorization": self.token, "Content-type": "application/json"}
-                )
-            
-            try:
-                interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)
-                return interaction # type: ignore
-            except Exception as e:
-                print(f"Error in run_command: {e}")
-                continue
-            
-        return None
 
     def wait_for(
         self,
@@ -218,10 +133,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -229,7 +140,7 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("fish", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("fish", retry_attempts, timeout)
         return message
         
     def hunt(self, retry_attempts: int = 3, timeout: int = 10):
@@ -245,10 +156,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -256,7 +163,7 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("hunt", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("hunt", retry_attempts, timeout)
         return message
         
     def dig(self, retry_attempts: int = 3, timeout: int = 10):
@@ -272,10 +179,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -283,7 +186,7 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("dig", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("dig", retry_attempts, timeout)
         return message
         
     def beg(self, retry_attempts: int = 3, timeout: int = 10):
@@ -299,10 +202,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -310,7 +209,7 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("beg", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("beg", retry_attempts, timeout)
         return message
     
     # Button commands
@@ -327,10 +226,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -338,7 +233,7 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("search", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("search", retry_attempts, timeout)
         return message
 
     def crime(self, retry_attempts: int = 3, timeout: int = 10):
@@ -354,10 +249,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -365,7 +256,7 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("crime", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("crime", retry_attempts, timeout)
         return message
 
     def postmemes(self, retry_attempts: int = 3, timeout: int = 10):
@@ -381,10 +272,6 @@ class Core:
         
         Raises
         --------
-        InvalidComponent
-            invalidcomponentdescription
-        NonceTimeout
-            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -392,5 +279,5 @@ class Core:
         --------
         message: Optional[`Message`]
         """
-        message: Message = self._run_command("postmemes", retry_attempts, timeout)
+        message: Optional[Message] = self.run_command("postmemes", retry_attempts, timeout)
         return message
