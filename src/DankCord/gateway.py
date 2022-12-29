@@ -156,45 +156,48 @@ class Gateway:
             event = self.recv_handler()
             if not event:
                 continue
-
-            if event["op"] == 0:
-                self.internal.s = event["s"]
-
-            elif event["op"] == 7 or (event["op"] == 9 and event["d"]):
-                self.reconnect_ws()
-                return
-            elif event["op"] == 1:
-                self.ws.send(orjson.dumps({"op": 1, "d": None}))
-                continue
-            elif event["op"] == 9 and not event["d"]:
-                self.pause = True
-                self.__boot_ws()
-                return
-
-            if not event["d"]:
-                continue
-            if event["t"] == "MESSAGE_ACK":
-                continue
-
-            if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"):
-                continue
             
-            if event["t"] == "INTERACTION_CREATE":
-                self.cache.interaction_create.append(event["d"]["nonce"])
-            elif event["t"] == "INTERACTION_SUCCESS":
-                self.cache.interaction_success.append(event["d"]["nonce"])
-            elif event["t"] == "MESSAGE_CREATE":
-                try:
-                    self.cache.message_create[event["d"]["nonce"]] = event["d"]
-                    self.cache.nonce_message_map[event["d"]["nonce"]] = event["d"]["id"]
-                except:
-                    pass
-            elif event["t"] == "MESSAGE_UPDATE":
-                if event["d"]["id"] not in self.cache.message_updates:
-                    self.cache.message_updates[event["d"]["id"]] = []
-                self.cache.message_updates[event["d"]["id"]].append(event["d"])
-                self.cache.raw_message_updates.append(event["d"])
-            else:
-                print("----------------- DEBUG START -----------------")
-                print(event)
-                print("----------------- DEBUG END -----------------")
+            try:
+                if event["op"] == 0:
+                    self.internal.s = event["s"]
+
+                elif event["op"] == 7 or (event["op"] == 9 and event["d"]):
+                    self.reconnect_ws()
+                    return
+                elif event["op"] == 1:
+                    self.ws.send(orjson.dumps({"op": 1, "d": None}))
+                    continue
+                elif event["op"] == 9 and not event["d"]:
+                    self.pause = True
+                    self.__boot_ws()
+                    return
+
+                if not event["d"]:
+                    continue
+                if event["t"] == "MESSAGE_ACK":
+                    continue
+
+                if event["t"] not in ("MESSAGE_CREATE", "MESSAGE_UPDATE", "INTERACTION_CREATE", "INTERACTION_SUCCESS"):
+                    continue
+                
+                if event["t"] == "INTERACTION_CREATE":
+                    self.cache.interaction_create.append(event["d"]["nonce"])
+                elif event["t"] == "INTERACTION_SUCCESS":
+                    self.cache.interaction_success.append(event["d"]["nonce"])
+                elif event["t"] == "MESSAGE_CREATE":
+                    try:
+                        self.cache.message_create[event["d"]["nonce"]] = event["d"]
+                        self.cache.nonce_message_map[event["d"]["nonce"]] = event["d"]["id"]
+                    except:
+                        pass
+                elif event["t"] == "MESSAGE_UPDATE":
+                    if event["d"]["id"] not in self.cache.message_updates:
+                        self.cache.message_updates[event["d"]["id"]] = []
+                    self.cache.message_updates[event["d"]["id"]].append(event["d"])
+                    self.cache.raw_message_updates.append(event["d"])
+                else:
+                    print("----------------- DEBUG START -----------------")
+                    print(event)
+                    print("----------------- DEBUG END -----------------")
+            except Exception as e:
+                self.logger.log(level="Error", msg=f"_events_listener function in gateway.py: {e}.")
