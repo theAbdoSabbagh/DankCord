@@ -23,9 +23,11 @@ $ python3 -m pip install -U .
 ```
 # Quick Example
 ```py
+from typing import Optional
+
 from DankCord import Client, Config
-from pyloggor import pyloggor
 from DankCord.Objects import Message
+from pyloggor import pyloggor
 
 bot = Client(
     Config("TOKEN", 00000000000), # Second argument is channel ID, must be int
@@ -38,11 +40,11 @@ bot = Client(
         level_adjustment_space=9,
     ),
 )
-message: Message = bot.core.fish()
-message: Message = bot.core.beg()
-message: Message = bot.core.hunt()
-message: Message = bot.run_command(name = "", **kwargs)
-message: Message = bot.run_sub_command(name = "", sub_name = "", **kwargs)
+message: Optional[Message] = bot.core.fish()
+message: Optional[Message] = bot.core.beg()
+message: Optional[Message] = bot.core.hunt()
+message: Optional[Message] = bot.run_command(name = "settings")
+message: Optional[Message] = bot.run_sub_command(name = "advancements", sub_name = "prestige")
 ```
 
 # Links
