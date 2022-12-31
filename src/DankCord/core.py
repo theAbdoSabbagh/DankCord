@@ -3,8 +3,9 @@ import requests
 
 from typing import Optional, Literal, Union, Callable
 from pyloggor import pyloggor
+from random import randint
 
-from .Objects import Config, Message
+from .Objects import Config, Message, Parser
 from .gateway import Gateway
 from .api import API
 
@@ -98,29 +99,32 @@ class Core(API):
             check = _check
 
         while time.time() < limit:
-            cache = self.gateway.cache            
-            if event == "INTERACTION_CREATE":
-                if check(cache.interaction_create[-1]):
-                    return True
-            if event =="INTERACTION_SUCCESS":
-                if check(cache.interaction_success[-1]):
-                    return True
+            try:
+                cache = self.gateway.cache            
+                if event == "INTERACTION_CREATE":
+                    if check(cache.interaction_create[-1]):
+                        return True
+                if event =="INTERACTION_SUCCESS":
+                    if check(cache.interaction_success[-1]):
+                        return True
 
-            if event == "MESSAGE_CREATE":
-                value = list(cache.message_create.values())[-1]
-                _msg = Message(value)
-                if check(_msg) is True:
-                    return _msg
-            if event == "MESSAGE_UPDATE":
-                while len(cache.raw_message_updates) == 0:
-                    continue
-                _msg = Message(cache.raw_message_updates[-1])
-                if check(_msg) is True:
-                    return _msg
+                if event == "MESSAGE_CREATE":
+                    value = list(cache.message_create.values())[-1]
+                    _msg = Message(value)
+                    if check(_msg) is True:
+                        return _msg
+                if event == "MESSAGE_UPDATE":
+                    while len(cache.raw_message_updates) == 0:
+                        continue
+                    _msg = Message(cache.raw_message_updates[-1])
+                    if check(_msg) is True:
+                        return _msg
+            except:
+                pass
         return None
 
     # Raw commands
-    def fish(self, retry_attempts: int = 3, timeout: int = 10):
+    def fish(self, retry_attempts:int = 3, timeout:int = 10):
         """
         Runs the `fish` command.
         
@@ -133,6 +137,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -140,10 +148,12 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("fish", retry_attempts, timeout)
-        return message
+        cmd : Message = self.run_command("fish", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        return Parser.common1(cmd.embeds[0].description)
         
-    def hunt(self, retry_attempts: int = 3, timeout: int = 10):
+    def hunt(self, retry_attempts:int = 3, timeout:int = 10):
         """
         Runs the `hunt` command.
         
@@ -156,6 +166,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -163,10 +177,12 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("hunt", retry_attempts, timeout)
-        return message
+        cmd : Message = self.run_command("hunt", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        return Parser.common1(cmd.embeds[0].description)
         
-    def dig(self, retry_attempts: int = 3, timeout: int = 10):
+    def dig(self, retry_attempts:int = 3, timeout:int = 10):
         """
         Runs the `dig` command.
         
@@ -179,6 +195,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -186,10 +206,12 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("dig", retry_attempts, timeout)
-        return message
+        cmd : Message = self.run_command("dig", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        return Parser.common1(cmd.embeds[0].description)
         
-    def beg(self, retry_attempts: int = 3, timeout: int = 10):
+    def beg(self, retry_attempts:int = 3, timeout:int = 10):
         """
         Runs the `beg` command.
         
@@ -202,6 +224,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -209,11 +235,13 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("beg", retry_attempts, timeout)
-        return message
+        cmd: Message = self.run_command("beg", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        return Parser.beg(cmd.embeds[0].description)
     
     # Button commands
-    def search(self, retry_attempts: int = 3, timeout: int = 10):
+    def search(self, retry_attempts:int = 3, timeout:int = 10, location:Literal[1, 2, 3, "random"] = 2):
         """
         Runs the `search` command.
         
@@ -226,6 +254,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -233,10 +265,24 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("search", retry_attempts, timeout)
-        return message
+        _location = None
+        if location not in [1, 2, 3, "random"]:
+            _location = "random"
+        if _location == "random":
+            _location = randint(1, 3)
+        else:
+            _location = location
+        cmd : Message = self.run_command("search", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        self.click(cmd.buttons[_location - 1])
+        def check(message):
+            return message.channel_id == int(self.channel_id) and message.author.id == 270904126974590976 and "searched" in message.embeds[0].authorName
+        cmd = self.wait_for("MESSAGE_UPDATE", check=check)
+        return Parser.search(cmd.embeds[0].description)
+        
 
-    def crime(self, retry_attempts: int = 3, timeout: int = 10):
+    def crime(self, retry_attempts: int = 3, timeout:int = 10, location:Literal[1, 2, 3, "random"] = 2):
         """
         Runs the `crime` command.
         
@@ -249,6 +295,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -256,10 +306,23 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("crime", retry_attempts, timeout)
-        return message
+        _location = None
+        if location not in [1, 2, 3, "random"]:
+            _location = "random"
+        if _location == "random":
+            _location = randint(1, 3)
+        else:
+            _location = location
+        cmd : Message = self.run_command("crime", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        self.click(cmd.buttons[_location - 1])
+        def check(message):
+            return message.author.id == 270904126974590976 and "committed" in message.embeds[0].authorName
+        cmd = self.wait_for("MESSAGE_UPDATE", check=check)
+        return Parser.crime(cmd.embeds[0].description)
 
-    def postmemes(self, retry_attempts: int = 3, timeout: int = 10):
+    def postmemes(self, retry_attempts: int = 3, timeout:int = 10, platform:Literal["discord", "reddit", "twitter", "facebook", "random"] = "random", type:Literal["fresh", "repost", "intellectual", "copypasta", "kind", "random"] = "random"):
         """
         Runs the `postmemes` command.
         
@@ -272,6 +335,10 @@ class Core(API):
         
         Raises
         --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
         UnknownChannel
             Bot doesn't have access to that channel.
 
@@ -279,5 +346,27 @@ class Core(API):
         --------
         message: Optional[`Message`]
         """
-        message: Optional[Message] = self.run_command("postmemes", retry_attempts, timeout)
-        return message
+        _platform = None
+        _type = None
+        if platform.lower() not in ["discord", "reddit", "twitter", "facebook"]:
+            _platform = "random"
+        else:
+            _platform = ["discord", "reddit", "twitter", "facebook"].index(platform.lower())
+        if type.lower() not in ["fresh", "repost", "intellectual", "copypasta", "kind"]:
+            _type = "random"
+        else:
+            _type = ["fresh", "repost", "intellectual", "copypasta", "kind"].index(type.lower())
+        if _platform == "random":
+            _platform = randint(0, 3)
+        if _type == "random":
+            _type = randint(0, 4)
+        cmd : Message = self.run_command("postmemes", retry_attempts, timeout)
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        def check(message):
+            return message.channel_id == int(self.channel_id) and message.author.id == 270904126974590976 and "Meme Posting Session" in message.embeds[0].authorName and "**You" in message.embeds[0].description or "No one" in message.embeds[0].description or "Do you even" in message.embeds[0].description or "Your meme" in message.embeds[0].description or "your meme" in message.embeds[0].description
+        self.select(cmd.dropdowns[0], [cmd.dropdowns[0].options[_platform].value])
+        self.select(cmd.dropdowns[1], [cmd.dropdowns[1].options[_type].value])
+        self.click(cmd.buttons[0])
+        cmd = self.wait_for("MESSAGE_UPDATE", check=check)
+        return Parser.postmemes(cmd.embeds[0].description)

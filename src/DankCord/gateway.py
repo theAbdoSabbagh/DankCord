@@ -122,7 +122,7 @@ class Gateway:
         if not self.dm_mode:
             self.logger.log(level="Debug", msg="Caching guild ID")
             for guild in identify["d"]["guilds"]:
-                for channel in guild["channels"]:
+                for channel in guild.get("channels", []):
                     if int(channel["id"]) == int(self.channel_id):
                         self.logger.log(level="Debug", msg="Found guild ID.")
                         self.guild_id = guild["id"]
