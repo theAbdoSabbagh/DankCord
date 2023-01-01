@@ -241,7 +241,7 @@ class Core(API):
         return Parser.beg(cmd.embeds[0].description)
     
     # Button commands
-    def search(self, retry_attempts:int = 3, timeout:int = 10, location:Literal[1, 2, 3, "random"] = 2):
+    def search(self, retry_attempts:int = 3, timeout:int = 10, location_index:Literal[1, 2, 3, "random"] = 2):
         """
         Runs the `search` command.
         
@@ -251,7 +251,8 @@ class Core(API):
             The amount of times to retry when executing the command fails.
         timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
-        
+        location_index: `Literal[1, 2, 3, "random"]`
+            The location to search for.
         Raises
         --------
         InvalidComponent
@@ -266,12 +267,9 @@ class Core(API):
         message: Optional[`Message`]
         """
         _location = None
-        if location not in [1, 2, 3, "random"]:
+        if location_index not in [1, 2, 3, "random"]:
             _location = "random"
-        if _location == "random":
-            _location = randint(1, 3)
-        else:
-            _location = location
+        _location = location_index if location_index in [1, 2, 3, "random"] else randint(1, 3)
         cmd : Message = self.run_command("search", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
             return Parser.cooldown(cmd.embeds[0].description)
@@ -282,7 +280,7 @@ class Core(API):
         return Parser.search(cmd.embeds[0].description)
         
 
-    def crime(self, retry_attempts: int = 3, timeout:int = 10, location:Literal[1, 2, 3, "random"] = 2):
+    def crime(self, retry_attempts: int = 3, timeout:int = 10, location_index:Literal[1, 2, 3, "random"] = 2):
         """
         Runs the `crime` command.
         
@@ -292,7 +290,8 @@ class Core(API):
             The amount of times to retry when executing the command fails.
         timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
-        
+        location_index: `Literal[1, 2, 3, "random"]`
+            The place to commit the crime in.
         Raises
         --------
         InvalidComponent
@@ -307,12 +306,9 @@ class Core(API):
         message: Optional[`Message`]
         """
         _location = None
-        if location not in [1, 2, 3, "random"]:
+        if location_index not in [1, 2, 3, "random"]:
             _location = "random"
-        if _location == "random":
-            _location = randint(1, 3)
-        else:
-            _location = location
+        _location = location_index if location_index in [1, 2, 3, "random"] else randint(1, 3)
         cmd : Message = self.run_command("crime", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
             return Parser.cooldown(cmd.embeds[0].description)
@@ -332,7 +328,10 @@ class Core(API):
             The amount of times to retry when executing the command fails.
         timeout: `int`
             The time it waits for to confirm whether a command was ran or not.
-        
+        platform: `Literal["discord", "reddit", "twitter", "facebook", "random"]`
+            The platform to post the meme in.
+        type: `Literal["fresh", "repost", "intellectual", "copypasta", "kind", "random"]`
+            The type of meme to post.
         Raises
         --------
         InvalidComponent
@@ -356,10 +355,8 @@ class Core(API):
             _type = "random"
         else:
             _type = ["fresh", "repost", "intellectual", "copypasta", "kind"].index(type.lower())
-        if _platform == "random":
-            _platform = randint(0, 3)
-        if _type == "random":
-            _type = randint(0, 4)
+        _platform = _platform if not _platform == "random" else randint(0, 3)
+        _type = _type if not _type == "random" else randint(0, 4)
         cmd : Message = self.run_command("postmemes", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
             return Parser.cooldown(cmd.embeds[0].description)

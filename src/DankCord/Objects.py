@@ -85,8 +85,8 @@ class DropdownOption:
     """
 
     def __init__(self, data: dict) -> None:
-        self.label: str = data["label"]
-        self.default: bool = data.get("default", False)
+        self.label: Optional[str] = data.get("label", None)
+        self.value: Optional[str] = data.get("value", None)
         self.value: str = data.get("value", None)
 
 
@@ -147,7 +147,9 @@ class Embed:
     def __init__(self, data: dict) -> None:
         self.title: str = data.get("title", None)
         self.description: str = data.get("description", None)
-        self.authorName : str = data["author"]["name"] if "author" in data.keys() else None
+        self.authorName : str = data.get("author", {}).get("name", {})
+        if self.authorName == {}:
+            self.authorName = None
         self.url: str = data.get("url", None)
         self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
         self.footer: Optional[EmbedFooter] = EmbedFooter(data["footer"]) if "footer" in data else None
@@ -209,18 +211,27 @@ class Parser:
         """
         Parses crucial information from the descriptions of the beg command.
         """
-        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+"]
+        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+", "\*\*(.*?)\*\*", "<(.*?)\>"]
         temp_desc = description.replace(",", "")
         death = None
         success = True
         gain = {}
         gained_coins = None
+        gained_item = None
         try:
             gained_coins = int(findall(gain_regex[1], findall(gain_regex[0], temp_desc)[0])[0])
         except:
             success = False
+        try:
+            gained_item = findall("\*\*(.*?)\*\*", temp_desc)[1]
+            tempstring = "<" + findall(gain_regex[3], gained_item)[0] + "> "
+            gained_item = gained_item.replace(tempstring, "")
+        except:
+            pass
         if gained_coins:
             gain["coins"] = gained_coins
+        if gained_item:
+            gain["items"] = [{1: gained_item}]
         return CommandResult(success, death, gain)
     
     def search(description: str):
@@ -275,15 +286,12 @@ class Parser:
         gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+", "<(.*?)\>"]
         gain = {}
         temp_desc = description.replace(",", "")
-        item_amount = None
         item = None
         try:
-            item_amount = 1
             item = findall("\*\*(.*?)\*\*", temp_desc)[1]
             tempstring = "<" + findall(gain_regex[2], item)[0] + "> "
             item = item.replace(tempstring, "")
         except:
-            item_amount = None
             pass
         death = None
         success = False
@@ -295,8 +303,8 @@ class Parser:
             death = True
         if gained_coins:
              gain["coins"] = gained_coins
-        if item_amount:
-            gain["items"] = [{item_amount: item}]
+        if item:
+            gain["items"] = [{1: item}]
         return CommandResult(success, death, gain)
     
     def postmemes(description: str):
