@@ -219,17 +219,23 @@ class Parser:
         try:
             gained_coins = int(findall(gain_regex[1], findall(gain_regex[0], temp_desc)[0])[0])
         except:
-            success = False
+            pass
         try:
-            gained_item = findall("\*\*(.*?)\*\*", temp_desc)[1]
-            tempstring = "<" + findall(gain_regex[3], gained_item)[0] + "> "
-            gained_item = gained_item.replace(tempstring, "")
+            if not gained_coins:
+                gained_item = findall(gain_regex[2], temp_desc)[0]
+                tempstring = "<" + findall(gain_regex[3], gained_item)[0] + "> "
+                item = item.replace(tempstring, "")
+            else:
+                gained_item = findall(gain_regex[2], temp_desc)[1]
+                tempstring = "<" + findall(gain_regex[3], gained_item)[0] + "> "
+                gained_item = gained_item.replace(tempstring, "")
         except:
             pass
         if gained_coins:
             gain["coins"] = gained_coins
         if gained_item:
             gain["items"] = [{1: gained_item}]
+        success = not gained_coins is None or not gained_item is None
         return CommandResult(success, death, gain)
     
     def search(description: str):
@@ -281,28 +287,33 @@ class Parser:
         """
         Parses crucial information from the descriptions of the crime command.
         """
-        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+", "<(.*?)\>"]
+        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+", "<(.*?)\>", "\*\*(.*?)\*\*"]
         gain = {}
         temp_desc = description.replace(",", "")
         item = None
-        try:
-            item = findall("\*\*(.*?)\*\*", temp_desc)[1]
-            tempstring = "<" + findall(gain_regex[2], item)[0] + "> "
-            item = item.replace(tempstring, "")
-        except:
-            pass
         death = None
         success = False
         gained_coins = None
         try:
             gained_coins = int(findall(gain_regex[1], findall(gain_regex[0], temp_desc)[0])[0])
-            success = True
         except:
-            death = True
+            pass
+        try:
+            if not gained_coins:
+                item = findall(gain_regex[3], temp_desc)[0]
+                tempstring = "<" + findall(gain_regex[2], item)[0] + "> "
+                item = item.replace(tempstring, "")
+            else:
+                item = findall(gain_regex[3], temp_desc)[1]
+                tempstring = "<" + findall(gain_regex[2], item)[0] + "> "
+                item = item.replace(tempstring, "")
+        except:
+            pass
         if gained_coins:
              gain["coins"] = gained_coins
         if item:
             gain["items"] = [{1: item}]
+        success = not gained_coins is None or not item is None
         return CommandResult(success, death, gain)
     
     def postmemes(description: str):
