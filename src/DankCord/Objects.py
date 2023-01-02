@@ -147,9 +147,7 @@ class Embed:
     def __init__(self, data: dict) -> None:
         self.title: str = data.get("title", None)
         self.description: str = data.get("description", None)
-        self.authorName : str = data.get("author", {}).get("name", {})
-        if self.authorName == {}:
-            self.authorName = None
+        self.authorName : str = data.get("author", {}).get("name", None)
         self.url: str = data.get("url", None)
         self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
         self.footer: Optional[EmbedFooter] = EmbedFooter(data["footer"]) if "footer" in data else None
