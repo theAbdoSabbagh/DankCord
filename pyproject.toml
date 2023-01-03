@@ -15,8 +15,6 @@ maintainers = [
     {author = "ThePrivatePanda", email = "contact@privatepanda.co"}
 ]
 readme = "README.md"
-homepage = "https://sxvxge.dev/projects/WhiteFlow"
-repository = "https://github.com/Sxvxgee/WhiteFlow"
 keywords = [
     "bot", "automation", "discord", "discord-bot", "dank-memer",
     "dankmemer", "dank-memer-farm", "dank-memer-farmer", "dank-memer-coins",
