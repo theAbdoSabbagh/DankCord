@@ -29,7 +29,6 @@ class API:
         name: Any
         type_: Any
         kwargs: **kwargs
-
         Returns
         --------
         options: list[`dict`[`str`, `Any`]]
@@ -52,7 +51,6 @@ class API:
         Parameters
         --------
         kwargs: **kwargs
-
         Returns
         --------
         options: list
@@ -71,7 +69,6 @@ class API:
 
     def run_command(self, name: str, retry_attempts: int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
         """Runs a slash command.
-
         Parameters
         --------
         name: str
@@ -81,7 +78,6 @@ class API:
         timeout: int = 10
             Duration before it times out.
         kwargs: **kwargs
-
         Returns
         --------
         message: Optional[`Message`]
@@ -137,15 +133,16 @@ class API:
                     json=data,
                     headers={"Authorization": self.token, "Content-type": "application/json"} # type: ignore
                 )
-            
             try:
                 response_data = response.json()
                 _errors: dict = response_data.get("errors", {}).get("data", {}).get("values", {}).get("0", {}).get("_errors", {})
+                if response_data.get("retry_after"):
+                    sleep(response_data["retry_after"])
+                    continue
                 if _errors.get("message"):
                     raise InvalidFormBody(_errors.get("message"))
             except RequestsJSONDecodeError:
                 pass
-
             try:
                 interaction: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout)  # type: ignore
                 return interaction # type: ignore
@@ -157,7 +154,6 @@ class API:
 
     def run_sub_command(self, name: str, sub_name: str, retry_attempts:int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
         """Runs a slash command.
-
         Parameters
         --------
         name: str
@@ -168,7 +164,6 @@ class API:
             The amount of times to retry on failure.
         timeout: int = 10
             Duration before it times out.
-
         Returns
         --------
         message: Optional[`Message`]
@@ -218,22 +213,23 @@ class API:
         }
         def check(message: Message):
             return message.nonce == nonce
-
         for i in range(retry_attempts):
             response = post(  # type: ignore
                     "https://discord.com/api/v9/interactions",
                     json=data,
                     headers={"Authorization": self.token, "Content-type": "application/json"} # type: ignore
                 )
-
+            
             try:
                 response_data = response.json()
                 _errors: dict = response_data.get("errors", {}).get("data", {}).get("values", {}).get("0", {}).get("_errors", {})
+                if response_data.get("retry_after"):
+                    sleep(response_data["retry_after"])
+                    continue
                 if _errors.get("message"):
                     raise InvalidFormBody(_errors.get("message"))
             except RequestsJSONDecodeError:
                 pass
-            
             try:
                 message: Optional[Union[Message, bool]] = self.wait_for("MESSAGE_CREATE", check=check, timeout=timeout) # type: ignore
                 return message # type: ignore
@@ -245,7 +241,6 @@ class API:
 
     def run_slash_group_command(self, name: str, sub_name: str, sub_group_name: str, retry_attempts: int = 3, timeout: int = 10, **kwargs) -> Optional[Message]:
         """Runs a slash group command.
-
         Parameters
         --------
         name: str
@@ -258,7 +253,6 @@ class API:
             The amount of times to retry on failure.
         timeout: int = 10
             Duration before it times out.
-
         Returns
         --------
         message: Optional[`Message`]
@@ -334,6 +328,9 @@ class API:
             try:
                 response_data = response.json()
                 _errors: dict = response_data.get("errors", {}).get("data", {}).get("values", {}).get("0", {}).get("_errors", {})
+                if response_data.get("retry_after"):
+                    sleep(response_data["retry_after"])
+                    continue
                 if _errors.get("message"):
                     raise InvalidFormBody(_errors.get("message"))
             except RequestsJSONDecodeError:
@@ -359,7 +356,6 @@ class API:
             The amount of times to retry on failure.
         timeout: int = 10
             Duration before it times out.
-
         Returns
         --------
         success_state: bool
@@ -390,12 +386,15 @@ class API:
                 
             try:
                 response_data = response.json()
-                _errors: dict = response_data.get("errors", {}).get("data", {}).get("values", {}).get("0", {}).get("_errors", {})
-                if _errors.get("message"):
-                    raise InvalidFormBody(_errors.get("message"))
+                _errors: dict = response_data.get("errors", {}).get("data", {})
+                try:
+                    _errors = _errors[0]["code"]
+                    if _errors:
+                        raise InvalidFormBody(_errors.get("message"))
+                except:
+                    pass
             except RequestsJSONDecodeError:
                 pass
-
             if response.status_code == 204:
                 break
             retry_after = int(response.json().get('retry_after', 0))
@@ -406,7 +405,6 @@ class API:
 
     def select(self, dropdown: Dropdown, options: list, retry_attempts: int = 10, timeout: int = 10) -> bool:
         """Selects an option from a dropdown.
-
         Parameters
         dropdown: Dropdown
             The dropdown to choose from.

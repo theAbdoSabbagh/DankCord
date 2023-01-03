@@ -184,23 +184,26 @@ class Client(API):
             check = _check
 
         while time.time() < limit:
-            cache = self.gateway.cache            
-            if event == "INTERACTION_CREATE":
-                if check(cache.interaction_create[-1]):
-                    return True
-            if event =="INTERACTION_SUCCESS":
-                if check(cache.interaction_success[-1]):
-                    return True
+            cache = self.gateway.cache    
+            try:        
+                if event == "INTERACTION_CREATE":
+                    if check(cache.interaction_create[-1]):
+                        return True
+                if event =="INTERACTION_SUCCESS":
+                    if check(cache.interaction_success[-1]):
+                        return True
 
-            if event == "MESSAGE_CREATE":
-                value = list(cache.message_create.values())[-1]
-                _msg = Message(value)
-                if check(_msg) is True:
-                    return _msg
-            if event == "MESSAGE_UPDATE":
-                while len(cache.raw_message_updates) == 0:
-                    continue
-                _msg = Message(cache.raw_message_updates[-1])
-                if check(_msg) is True:
-                    return _msg
+                if event == "MESSAGE_CREATE":
+                    value = list(cache.message_create.values())[-1]
+                    _msg = Message(value)
+                    if check(_msg) is True:
+                        return _msg
+                if event == "MESSAGE_UPDATE":
+                    while len(cache.raw_message_updates) == 0:
+                        continue
+                    _msg = Message(cache.raw_message_updates[-1])
+                    if check(_msg) is True:
+                        return _msg
+            except IndexError:
+                pass
         return None

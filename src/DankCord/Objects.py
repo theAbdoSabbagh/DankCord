@@ -1,5 +1,7 @@
 from typing import Literal, Optional, Union
 from rich import print
+from re import findall
+from datetime import datetime
 
 class Config:
     def __init__(
@@ -65,7 +67,6 @@ class Author:
     def __repr__(self) -> str:
         return f"{self.name}#{self.discriminator}"
 
-
 class ActionRow:
     """
     Represents an ActionRow.
@@ -85,8 +86,8 @@ class DropdownOption:
 
     def __init__(self, data: dict) -> None:
         self.label: Optional[str] = data.get("label", None)
-        self.default: bool = data.get("default", False)
         self.value: Optional[str] = data.get("value", None)
+        self.value: str = data.get("value", None)
 
 
 class Dropdown:
@@ -144,12 +145,12 @@ class Embed:
     """
 
     def __init__(self, data: dict) -> None:
-        self.data: dict = data
-        self.title: Optional[str] = data.get("title", None)
-        self.description: Optional[str] = data.get("description", None)
-        self.url: Optional[str] = data.get("url", None)
-        self.author: Optional[Author] = Author(data.get("author", {})) if "author" in data else None
-        self.footer: Optional[EmbedFooter] = EmbedFooter(data.get("footer", {})) if "footer" in data else None
+        self.title: str = data.get("title", None)
+        self.description: str = data.get("description", None)
+        self.authorName : str = data.get("author", {}).get("name", None)
+        self.url: str = data.get("url", None)
+        self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
+        self.footer: Optional[EmbedFooter] = EmbedFooter(data["footer"]) if "footer" in data else None
 
 
 class Message:
@@ -174,28 +175,196 @@ class Message:
             item for component in self.components for item in component.components if isinstance(item, Dropdown)
         ]
 
+class Bot:
+    """
+    Represents the bot account.
+    """
+    
+    def __init__(self, data: dict) -> None:
+        self.username: str = data["d"]["user"]["username"]
+        self.id: int = int(data["d"]["user"]["id"])
+        self.discriminator: int = int(data["d"]["user"]["discriminator"])
+        self.email: str = data["d"]["user"]["email"]
+        self.bot: str = f"{self.username}#{self.discriminator}"
+
 class CommandResult:
     """
     Represents a class that has the result of running a certain command.
     """
     
-    def __init__(
-        self,
-        success: bool = None,
-        death: bool = None,
-        coin_gain: int = None,
-        coin_loss: int = None,
-        items_gain: dict = None,
-        items_loss: dict = None,
-    ) -> None:
+    def __init__(self, success: bool, death: bool = False, gain: dict = {}, loss: dict = {}, cooldown: int = None) -> None:
         self.success: Optional[bool] = success
         self.death: Optional[bool] = death
-        self.coin_gain: Optional[int] = coin_gain
-        self.coin_loss: Optional[int] = coin_loss
-        self.items_gain: Optional[dict] = items_gain
-        self.items_loss: Optional[dict] = items_loss
+        self.gain: Optional[dict] = gain
+        self.loss: Optional[dict] = loss
+        self.cooldown: Optional[int] = cooldown
+        if self.cooldown:
+            self.cooldown = round(self.cooldown, 2)
 
+class Parser:
+    """
+    Extracts crucial data from the result of a command, such as coins, gain, loss anad deaths.
+    """
+    def beg(description: str):
+        """
+        Parses crucial information from the descriptions of the beg command.
+        """
+        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+", "\*\*(.*?)\*\*", "<(.*?)\>"]
+        temp_desc = description.replace(",", "")
+        death = None
+        success = True
+        gain = {}
+        gained_coins = None
+        gained_item = None
+        try:
+            gained_coins = int(findall(gain_regex[1], findall(gain_regex[0], temp_desc)[0])[0])
+        except:
+            pass
+        try:
+            if not gained_coins:
+                gained_item = findall(gain_regex[2], temp_desc)[0]
+                tempstring = "<" + findall(gain_regex[3], gained_item)[0] + "> "
+                item = item.replace(tempstring, "")
+            else:
+                gained_item = findall(gain_regex[2], temp_desc)[1]
+                tempstring = "<" + findall(gain_regex[3], gained_item)[0] + "> "
+                gained_item = gained_item.replace(tempstring, "")
+        except:
+            pass
+        if gained_coins:
+            gain["coins"] = gained_coins
+        if gained_item:
+            gain["items"] = [{1: gained_item}]
+        success = not gained_coins is None or not gained_item is None
+        return CommandResult(success, death, gain)
+    
+    def search(description: str):
+        """
+        Parses crucial information from the descriptions of the search command.
+        """
+        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+"]
+        gain = {}
+        temp_desc = description.replace(",", "")
+        item_amount = None
+        item = None
+        try:
+            item_amount = int(findall("\*\*[0-9]+x", temp_desc)[0].replace("**", "").replace("x", ""))
+            item = " ".join(findall("\*\*[0-9]+x .+\*\*", temp_desc)[0].replace("**", "").split(" ")[2:])
+        except:
+            pass
+        death = None
+        success = True
+        gained_coins = None
+        try:
+            gained_coins = int(findall(gain_regex[1], findall(gain_regex[0], temp_desc)[0])[0])
+        except:
+            success = False
+        if gained_coins:
+             gain["coins"] = gained_coins
+        if item_amount:
+            gain["items"] = [{item_amount: item}]
+        return CommandResult(success, death, gain)
 
+    def common1(description: str):
+        """
+        Parses crucial information from the descriptions of the fish, hunt and dig commands.
+        """
+        temp_desc = description.replace(",", "")
+        gain_regex = ["\*\*.*\*"]
+        gained_items = None
+        success = True
+        death = None
+        gain = {}
+        try:
+            gained_items =  " ".join(findall(gain_regex[0], temp_desc)[0].replace("**", "").split(" ")[1:])
+        except:
+            success = False
+        if gained_items:
+            gain["items"] = [{1: gained_items}]
+        return CommandResult(success, death, gain)
+        
+    def crime(description: str):
+        """
+        Parses crucial information from the descriptions of the crime command.
+        """
+        gain_regex = ["\*\*⏣ [0-9]+\*\*", "[0-9]+", "<(.*?)\>", "\*\*(.*?)\*\*"]
+        gain = {}
+        temp_desc = description.replace(",", "")
+        item = None
+        death = None
+        success = False
+        gained_coins = None
+        try:
+            gained_coins = int(findall(gain_regex[1], findall(gain_regex[0], temp_desc)[0])[0])
+        except:
+            pass
+        try:
+            if not gained_coins:
+                item = findall(gain_regex[3], temp_desc)[0]
+                tempstring = "<" + findall(gain_regex[2], item)[0] + "> "
+                item = item.replace(tempstring, "")
+            else:
+                item = findall(gain_regex[3], temp_desc)[1]
+                tempstring = "<" + findall(gain_regex[2], item)[0] + "> "
+                item = item.replace(tempstring, "")
+        except:
+            pass
+        if gained_coins:
+             gain["coins"] = gained_coins
+        if item:
+            gain["items"] = [{1: item}]
+        success = not gained_coins is None or not item is None
+        return CommandResult(success, death, gain)
+    
+    def postmemes(description: str):
+        """
+        Parses crucial information from the descriptions of the postmemes command.
+        """
+        parsed = description.replace(",", "").split("\n")[3:]
+        try:
+            index = parsed.index("**You Received:**")
+            parsed = parsed[index:]
+        except ValueError:
+            pass
+        gain = {}
+        success = True
+        death = None
+        gain_regex = ["[0-9]+", "[0-9]+x"]
+        if "**You Received" in description:
+            for i in parsed:
+                if "⏣" in i:
+                    gain["coins"] = int(findall(gain_regex[0], i)[0])
+                elif "<:" in i:
+                    if not "items" in gain.keys():
+                        gain["items"] = []
+                    amount = int(findall(gain_regex[1], i)[0].replace('x', ''))
+                    item = " ".join(i.split(" ")[5:])
+                    gain["items"].append({amount: item})
+        else:
+            success = False
+        return CommandResult(success, death, gain)
+    
+    def cooldown(description: str):
+        """
+        Parses crucial information from the descriptions of the cooldown indicator.
+        """
+        cooldown_regex = ["<(.*?)\>", "(\d+)"]
+        time = datetime.fromtimestamp(int(findall(cooldown_regex[1], findall(cooldown_regex[0], description)[0])[0]))
+        difference = (time - datetime.now()).total_seconds()
+        return CommandResult(False, None, {}, cooldown=difference)
+    
+    def check_cooldown(description: str):
+        """
+        Checks if the returned embed is a cooldown message.
+        """
+        try:
+            if "seconds" in description and "command" in description and "cooldown is" in description and "seconds" in description:
+                return True
+            else:
+                return False
+        except:
+            return False
+        
 class User:
     """
     Represents a class that has the data of a user.
