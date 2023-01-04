@@ -441,7 +441,6 @@ class Core(API):
         if not _quantity.isdigit() or _quantity == "0":
             _quantity = "1"
         cmd = self.run_slash_group_command("shop", "sell", "item", item=item, quantity=_quantity)
-        print(cmd.data)
         if Parser.check_cooldown(cmd.embeds[0].description):
             return Parser.cooldown(cmd.embeds[0].description)
         return Parser.sell(cmd.embeds[0].description, item, quantity)
