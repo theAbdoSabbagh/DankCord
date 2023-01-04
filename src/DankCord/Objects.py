@@ -344,6 +344,24 @@ class Parser:
             success = False
         return CommandResult(success, death, gain)
     
+    def buy(description: str, item: str, quantity: int):
+        regex = ["\*\*(.*?)\*\*", "[0-9]+"]
+        if "bought" in description and "and paid" in description:
+            temp_desc = description.replace(",", "")
+            paid = int(findall(regex[1], findall(regex[0], temp_desc)[1])[0])
+            return CommandResult(True, None, {quantity: item}, loss={"coins": paid})
+        else:
+            return CommandResult(False, None, None, None)
+        
+    def sell(description: str, item: str, quantity: int):
+        regex = ["\*\*(.*?)\*\*", "[0-9]+"]
+        if "sold" in description and "and got paid" in description:
+            temp_desc = description.replace(",", "")
+            earned = int(findall(regex[1], findall(regex[0], temp_desc)[0])[0])
+            return CommandResult(True, None, {"coins": earned}, loss={quantity: item})
+        else:
+            return CommandResult(False, None, None, None)
+            
     def cooldown(description: str):
         """
         Parses crucial information from the descriptions of the cooldown indicator.

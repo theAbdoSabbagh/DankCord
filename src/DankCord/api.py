@@ -180,7 +180,7 @@ class API:
                 if item["name"] == name:
                     type_ = item["type"]
                     break
-            options = self._OptionsBuilder(name, type_, **kwargs)
+            options = self._RawOptionsBuilder(**kwargs)
 
         data = {
             "type": 2,
@@ -193,7 +193,13 @@ class API:
                 "id": command_info["id"],
                 "name": name,
                 "type": command_info["type"],
-                "options": options,
+                "options": [
+                    {
+                        "type": type_,
+                        "name": sub_name,
+                        "options": options
+                    }
+                ],
                 "application_command": {
                     "id": command_info["id"],
                     "application_id": "270904126974590976",
@@ -269,8 +275,8 @@ class API:
             for item in command_info["options"]:
                 if item["name"] == sub_name:
                     sub_type = item["type"]
-                for item_ in item["options"]:
-                    if item_["name"] == sub_group_name:
+                for item_ in item.get("options", []):
+                    if item_["name"] == sub_group_name and not item_["type"] in [3, 5, 10]:
                         sub_group_type = item_["type"]
             options = self._RawOptionsBuilder(**kwargs)
 

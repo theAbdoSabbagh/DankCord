@@ -181,7 +181,10 @@ class Gateway:
                     continue
                 
                 if event["t"] == "INTERACTION_CREATE":
-                    self.cache.interaction_create.append(event["d"]["nonce"])
+                    try:
+                        self.cache.interaction_create.append(event["d"]["nonce"])
+                    except:
+                        pass
                 elif event["t"] == "INTERACTION_SUCCESS":
                     self.cache.interaction_success.append(event["d"]["nonce"])
                 elif event["t"] == "MESSAGE_CREATE":
@@ -200,4 +203,6 @@ class Gateway:
                     print(event)
                     print("----------------- DEBUG END -----------------")
             except Exception as e:
+                import traceback
+                print(traceback.format_exc())
                 self.logger.log(level="Error", msg=f"_events_listener function in gateway.py: {e}.")
