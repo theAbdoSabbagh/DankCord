@@ -203,6 +203,4 @@ class Gateway:
                     print(event)
                     print("----------------- DEBUG END -----------------")
             except Exception as e:
-                import traceback
-                print(traceback.format_exc())
                 self.logger.log(level="Error", msg=f"_events_listener function in gateway.py: {e}.")
