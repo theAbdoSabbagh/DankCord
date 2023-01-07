@@ -6,7 +6,7 @@ from pyloggor import pyloggor
 from websocket import create_connection
 
 from .exceptions import InvalidToken
-from .Objects import Cache, Config
+from .objects import Cache, Config
 
 
 class GatewayInternal:

@@ -5,7 +5,7 @@ from typing import Optional, Literal, Union, Callable
 from pyloggor import pyloggor
 from random import randint
 
-from .Objects import Config, Message, Parser
+from .objects import Config, Message, Parser
 from .gateway import Gateway
 from .api import API
 
@@ -121,6 +121,7 @@ class Core(API):
                         return _msg
             except:
                 pass
+        
         return None
 
     # Raw commands

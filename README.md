@@ -26,7 +26,7 @@ $ python3 -m pip install -U .
 from typing import Optional
 
 from DankCord import Client, Config
-from DankCord.Objects import Message
+from DankCord.objects import Message
 from pyloggor import pyloggor
 
 bot = Client(
