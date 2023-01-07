@@ -53,5 +53,5 @@ message: Optional[Message] = bot.run_sub_command(name = "advancements", sub_name
 - Documentation: coming soon.
 
 # Special thanks
-- [ThePrivatePanda](https://github.com/ThePrivatePanda): An ex-maintainer of the project.
+- [ThePrivatePanda](https://github.com/ThePrivatePanda): The co-maintainer of the project.
 - All our other contributors, DankCord wouldn't have been what it is today without them.
