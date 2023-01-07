@@ -193,7 +193,7 @@ class Interaction:
 
     def __repr__(self) -> str:
         return f"""<Interaction id={self.id} guild_id={self.guild_id} channel_id={self.channel_id}
-user={self.user} member={self.member} type={self.type} data={self.data}>""".replace('\n', '')
+user={self.user} member={self.member} type={self.type} data={self.data}>""".replace('\n', ' ')
 
 
 class Message:
