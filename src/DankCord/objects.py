@@ -183,9 +183,9 @@ class Interaction:
         self.id: Optional[int] = int(data.get("id", 0))
         self.guild_id: Optional[int] = int(data.get("guild_id", 0))
         self.channel_id: Optional[int] = int(data.get("channel_id", 0))
-        self.user: Optional[User] = User(data.get("user", {}))
-        self.member: dict = data.get("member", {})
-        """LIB DEVELOPER: https://discord.com/developers/docs/resources/guild#guild-member-object"""
+        self.member: Optional[Member] = Member(data.get("member", {})) if 'member' in data else None
+        self.user: Optional[User] = User(data.get("user", {})) if 'user' in data else None
+        # TODO Convert those 2 below to objects
         self.type: Optional[str] = data.get("type", None)
         """LIB DEVELOPER: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-type"""
         self.data: Optional[dict] = data.get("data", {})
@@ -423,7 +423,7 @@ class Parser:
         
 class User:
     """
-    Represents a class that has the data of a user.
+    Represents a user.
     """
 
     def __init__(self, data: dict) -> None:
@@ -437,3 +437,25 @@ class User:
 
     def __repr__(self) -> str:
         return f"<User id={self.id} discriminator={self.discriminator} name={self.name} bio={self.bio} phone={self.phone} email={self.email} verified={self.verified}>"
+
+
+class Member:
+    """
+    Represents a member.
+    """
+
+    def __init__(self, data: dict) -> None:
+        self.roles: Optional[dict] = data.get("roles", {})
+        self.pending: Optional[bool] = data.get("pending", False)
+        self.mute: Optional[bool] = data.get("mute", False)
+        self.deaf: Optional[bool] = data.get("deaf", False)
+        self.premium_since: Optional[str] = data.get("premium_since", None)
+        self.nick: Optional[str] = data.get("nick", None)
+        self.joined_at: Optional[str] = data.get("joined_at", None)
+        self.communication_disabled_until: Optional[str] = data.get("communication_disabled_until", None)
+        self.avatar: Optional[str] = data.get("avatar", None)
+
+    def __repr__(self) -> str:
+        return f"""<Member roles={self.roles} pending={self.pending} mute={self.mute} deaf={self.deaf}
+premium_since={self.premium_since} nick={self.nick} joined_at={self.joined_at}
+communication_disabled_until={self.communication_disabled_until} avatar={self.avatar}>""".replace('\n', ' ')
