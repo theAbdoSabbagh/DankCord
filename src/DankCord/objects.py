@@ -171,7 +171,7 @@ class Embed:
         self.footer: Optional[EmbedFooter] = EmbedFooter(data["footer"]) if "footer" in data else None
 
     def __repr__(self) -> str:
-        return f"<Embed title={self.title}description={self.description}authorName={self.authorName}url={self.url}author={self.author}footer={self.footer}>"
+        return f"<Embed title={self.title} description={self.description} authorName={self.authorName} url={self.url} author={self.author} footer={self.footer}>"
 
 
 class Interaction:
@@ -203,6 +203,7 @@ class Message:
 
     def __init__(self, data: dict) -> None:
         self.data: dict = data
+        self.ephemeral: bool = True if data.get('flags', 0) == 64 else False
         self.author: Optional[Author] = Author(data.get("author", {})) if "author" in data else None
         self.interaction: Optional[Interaction] = Interaction(data.get("interaction", {})) if "interaction" in data else None
         self.content: Optional[str] = data.get("content", None)
