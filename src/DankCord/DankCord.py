@@ -8,9 +8,10 @@ from requests import Response
 
 from .exceptions import DataAccessFailure, MissingPermissions, NoCommands, UnknownChannel
 from .gateway import Gateway
-from .Objects import Config, Message, User
+from .objects import Config, Message, User
 from .core import Core
 from .api import API
+from .utilities import Utilities
 
 class Client(API):
     def __init__(self, config: Config, logger: pyloggor):
@@ -39,10 +40,26 @@ class Client(API):
         self._get_commands()
         self._get_info()
 
+        self.core = Core(
+            config,
+            self.commands_data,
+            self.guild_id,
+            self.session_id,
+            self.logger,
+            self.gateway
+        )
+        self.utilities = Utilities(
+            config, 
+            self.commands_data, 
+            self.guild_id, 
+            self.session_id, 
+            self.logger,
+            self.user,
+            self.gateway
+        )
         logger.log(
             level="Info", msg=f"Fully booted up, it took total {round(time.perf_counter() - __boot_start, 3)} seconds."
         )
-        self.core = Core(config, self.commands_data, self.guild_id, self.session_id, self.logger, self.gateway)
 
     def _get_commands(self, channel_id: Optional[str] = None) -> Optional[Response]:
         """Gets all slash command data in a channel, dumps them into memory or a file based on user settings.
