@@ -1,11 +1,11 @@
-[build-system]
-requires = ["setuptools", "orjson", "pyloggor", "websocket_client"]
-
-[project]
+[tool.poetry]
 name = "DankCord"
-version = "0.0.2.5"
+version = "0.0.3"
 description = "The first python library for Dank Memer selfbots. Incredibly fast, secure, strong, and reliable."
-license = {text = "MIT"}
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Sxvxgee/DankCord"
+documentation = "https://github.com/Sxvxgee/DankCord/blob/master/README.md"
 authors = [
     {author = "Sxvxge", email = "sxvxge69@gmail.com"},
     {author = "ThePrivatePanda", email = "contact@privatepanda.co"}
@@ -14,22 +14,22 @@ maintainers = [
     {author = "Sxvxge", email = "sxvxge69@gmail.com"},
     {author = "ThePrivatePanda", email = "contact@privatepanda.co"}
 ]
-readme = "README.md"
+packages = [
+    { include = "DankCord" }
+]
 keywords = [
     "bot", "automation", "discord", "discord-bot", "dank-memer",
     "dankmemer", "dank-memer-farm", "dank-memer-farmer", "dank-memer-coins",
     "dank-memer-coins-farmer"
 ]
 
+[tool.poetry.dependencies]
+python = "^3.9"
+
 [tool.poetry.urls]
 "Author Portfolio" = "https://sxvxge.dev"
 Discord = "https://discord.gg/XaQ6FAP3sm"
 Github = "https://www.github.com/Sxvxgee/DankCord"
 
-[tool.poetry]
-repository = "https://github.com/Sxvxgee/DankCord"
-documentation = "https://github.com/Sxvxgee/DankCord/blob/master/README.md"
-requires-python = ">=3.8"
-packages = [
-    { include = "DankCord" }
-]
+[build-system]
+requires = ["setuptools", "orjson", "pyloggor", "websocket_client"]
