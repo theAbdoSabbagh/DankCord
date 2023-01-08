@@ -24,6 +24,9 @@ class Config:
         self.channel_id: int = channel_id
         self.dm_mode: bool = dm_mode
         self.resource_intensivity: str = resource_intensivity.upper()
+    
+    def __repr__(self) -> str:
+        return f"<Config token={self.token} channel_id={self.channel_id} dm_mode={self.dm_mode} resource_intensivity={self.resource_intensivity}>"
 
 
 class Cache:
@@ -78,6 +81,9 @@ class ActionRow:
             Button(i, message_id) if i["type"] == 2 else Dropdown(i, message_id) for i in data["components"]
         ]
     
+    def __repr__(self) -> str:
+        return f"<ActionRow components={self.components}>"
+
 
 class DropdownOption:
     """
@@ -87,7 +93,9 @@ class DropdownOption:
     def __init__(self, data: dict) -> None:
         self.label: Optional[str] = data.get("label", None)
         self.value: Optional[str] = data.get("value", None)
-        self.value: str = data.get("value", None)
+    
+    def __repr__(self) -> str:
+        return f"<DropdownOption label={self.label} value={self.value}>"
 
 
 class Dropdown:
@@ -101,7 +109,8 @@ class Dropdown:
         self.custom_id: Optional[int] = data.get("custom_id", None)
         self.options: list[DropdownOption] = [DropdownOption(child) for child in data["options"]]
 
-    # TODO: Make a choose function
+    def __repr__(self) -> str:
+        return f"<Dropdown message_id={self.message_id} type={self.type} custom_id={self.custom_id} options={self.options}>"
 
 
 class Button:
@@ -117,6 +126,9 @@ class Button:
         self.disabled: Optional[bool] = data.get("disabled", False)
         self.custom_id: Optional[str] = data.get("custom_id", None)
 
+    def __repr__(self) -> str:
+        return f"<Button message_id={self.message_id} type={self.type} emoji={self.emoji} label={self.label} disabled={self.disabled} custom_id={self.custom_id}>"
+
 
 class Emoji:
     """
@@ -126,6 +138,9 @@ class Emoji:
     def __init__(self, data: dict) -> None:
         self.name: Optional[str] = data.get("name", None)
         self.id: Optional[int] = data.get("id", None)
+
+    def __repr__(self) -> str:
+        return f"<Emoji name={self.name} id={self.id}>"
 
 
 class EmbedFooter:
@@ -137,6 +152,9 @@ class EmbedFooter:
         self.text: Optional[str] = data.get("text", None)
         self.icon_url: Optional[str] = data.get("icon_url", None)
         self.proxy_icon_url: Optional[str] = data.get("proxy_icon_url", None)
+
+    def __repr__(self) -> str:
+        return f"<EmbedFooter text={self.text} icon_url={self.icon_url} proxy_icon_url={self.proxy_icon_url}>"
 
 
 class Embed:
@@ -152,6 +170,31 @@ class Embed:
         self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
         self.footer: Optional[EmbedFooter] = EmbedFooter(data["footer"]) if "footer" in data else None
 
+    def __repr__(self) -> str:
+        return f"<Embed title={self.title} description={self.description} authorName={self.authorName} url={self.url} author={self.author} footer={self.footer}>"
+
+
+class Interaction:
+    """
+    Represents an interaction.
+    """
+
+    def __init__(self, data: dict) -> None:
+        self.id: Optional[int] = int(data.get("id", 0))
+        self.guild_id: Optional[int] = int(data.get("guild_id", 0))
+        self.channel_id: Optional[int] = int(data.get("channel_id", 0))
+        self.member: Optional[Member] = Member(data.get("member", {})) if 'member' in data else None
+        self.user: Optional[User] = User(data.get("user", {})) if 'user' in data else None
+        # TODO Convert those 2 below to objects
+        self.type: Optional[str] = data.get("type", None)
+        """LIB DEVELOPER: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-type"""
+        self.data: Optional[dict] = data.get("data", {})
+        """LIB DEVELOPER: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-data"""
+
+    def __repr__(self) -> str:
+        return f"""<Interaction id={self.id} guild_id={self.guild_id} channel_id={self.channel_id}
+user={self.user} member={self.member} type={self.type} data={self.data}>""".replace('\n', ' ')
+
 
 class Message:
     """
@@ -160,11 +203,13 @@ class Message:
 
     def __init__(self, data: dict) -> None:
         self.data: dict = data
-        self.author: Optional[Author] = Author(data["author"]) if "author" in data else None
+        self.ephemeral: bool = True if data.get('flags', 0) == 64 else False
+        self.author: Optional[Author] = Author(data.get("author", {})) if "author" in data else None
+        self.interaction: Optional[Interaction] = Interaction(data.get("interaction", {})) if "interaction" in data else None
         self.content: Optional[str] = data.get("content", None)
         self.nonce: Optional[str] = data.get("nonce", None)
-        self.id: Optional[int] = int(data.get("id", 0))
         self.timestamp: Optional[str] = data.get("timestamp", None)
+        self.id: Optional[int] = int(data.get("id", 0))
         self.channel_id: Optional[int] = int(data.get("channel_id", 0))
         self.embeds: list[Embed] = [Embed(i) for i in data.get("embeds", [])]
         self.components: list[ActionRow] = [ActionRow(i, self.id) for i in data.get("components", [])]
@@ -174,6 +219,12 @@ class Message:
         self.dropdowns: list[Dropdown] = [
             item for component in self.components for item in component.components if isinstance(item, Dropdown)
         ]
+    
+    def __repr__(self) -> str:
+        return f"""<Message author={self.author} content=\"{self.content}\" nonce={self.nonce}
+id={self.id} timestamp={self.timestamp} channel_id={self.channel_id} embeds={self.embeds}
+components={self.components} buttons={self.buttons} dropdowns={self.dropdowns}>""".replace('\n', ' ')
+
 
 class Bot:
     """
@@ -185,7 +236,9 @@ class Bot:
         self.id: int = int(data["d"]["user"]["id"])
         self.discriminator: int = int(data["d"]["user"]["discriminator"])
         self.email: str = data["d"]["user"]["email"]
-        self.bot: str = f"{self.username}#{self.discriminator}"
+    
+    def __repr__(self) -> str:
+        return f"{self.username}#{self.discriminator}"
 
 class CommandResult:
     """
@@ -200,6 +253,10 @@ class CommandResult:
         self.cooldown: Optional[int] = cooldown
         if self.cooldown:
             self.cooldown = round(self.cooldown, 2)
+
+    def __repr__(self) -> str:
+        return f"<CommandResult success={self.success} death={self.death} gain={self.gain} loss={self.loss} cooldown={self.cooldown}>"
+
 
 class Parser:
     """
@@ -343,7 +400,25 @@ class Parser:
         else:
             success = False
         return CommandResult(success, death, gain)
-    
+
+    def buy(description: str, item: str, quantity: int):
+        regex = ["\*\*(.*?)\*\*", "[0-9]+"]
+        if "bought" in description and "and paid" in description:
+            temp_desc = description.replace(",", "")
+            paid = int(findall(regex[1], findall(regex[0], temp_desc)[1])[0])
+            return CommandResult(True, None, {quantity: item}, loss={"coins": paid})
+        else:
+            return CommandResult(False, None, None, None)
+
+    def sell(description: str, item: str, quantity: int):
+        regex = ["\*\*(.*?)\*\*", "[0-9]+"]
+        if "sold" in description and "and got paid" in description:
+            temp_desc = description.replace(",", "")
+            earned = int(findall(regex[1], findall(regex[0], temp_desc)[0])[0])
+            return CommandResult(True, None, {"coins": earned}, loss={quantity: item})
+        else:
+            return CommandResult(False, None, None, None)
+
     def cooldown(description: str):
         """
         Parses crucial information from the descriptions of the cooldown indicator.
@@ -367,7 +442,7 @@ class Parser:
         
 class User:
     """
-    Represents a class that has the data of a user.
+    Represents a user.
     """
 
     def __init__(self, data: dict) -> None:
@@ -378,3 +453,28 @@ class User:
         self.phone: Optional[str] = data.get("phone", None)
         self.email: Optional[str] = data.get("email", None)
         self.verified: bool = data.get("verified", False)
+
+    def __repr__(self) -> str:
+        return f"<User id={self.id} discriminator={self.discriminator} name={self.name} bio={self.bio} phone={self.phone} email={self.email} verified={self.verified}>"
+
+
+class Member:
+    """
+    Represents a member.
+    """
+
+    def __init__(self, data: dict) -> None:
+        self.roles: Optional[dict] = data.get("roles", {})
+        self.pending: Optional[bool] = data.get("pending", False)
+        self.mute: Optional[bool] = data.get("mute", False)
+        self.deaf: Optional[bool] = data.get("deaf", False)
+        self.premium_since: Optional[str] = data.get("premium_since", None)
+        self.nick: Optional[str] = data.get("nick", None)
+        self.joined_at: Optional[str] = data.get("joined_at", None)
+        self.communication_disabled_until: Optional[str] = data.get("communication_disabled_until", None)
+        self.avatar: Optional[str] = data.get("avatar", None)
+
+    def __repr__(self) -> str:
+        return f"""<Member roles={self.roles} pending={self.pending} mute={self.mute} deaf={self.deaf}
+premium_since={self.premium_since} nick={self.nick} joined_at={self.joined_at}
+communication_disabled_until={self.communication_disabled_until} avatar={self.avatar}>""".replace('\n', ' ')

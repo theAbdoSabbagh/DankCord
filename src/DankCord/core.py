@@ -5,7 +5,7 @@ from typing import Optional, Literal, Union, Callable
 from pyloggor import pyloggor
 from random import randint
 
-from .Objects import Config, Message, Parser
+from .objects import Config, Message, Parser
 from .gateway import Gateway
 from .api import API
 
@@ -121,6 +121,7 @@ class Core(API):
                         return _msg
             except:
                 pass
+        
         return None
 
     # Raw commands
@@ -146,7 +147,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         cmd : Message = self.run_command("fish", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
@@ -175,7 +176,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         cmd : Message = self.run_command("hunt", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
@@ -204,7 +205,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         cmd : Message = self.run_command("dig", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
@@ -233,7 +234,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         cmd: Message = self.run_command("beg", retry_attempts, timeout)
         if Parser.check_cooldown(cmd.embeds[0].description):
@@ -264,7 +265,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         _location = None
         if location_index not in [1, 2, 3, "random"]:
@@ -303,7 +304,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         _location = None
         if location_index not in [1, 2, 3, "random"]:
@@ -343,7 +344,7 @@ class Core(API):
 
         Returns
         --------
-        message: Optional[`Message`]
+        CommandResult: Optional[`CommandResult`]
         """
         _platform = None
         _type = None
@@ -367,3 +368,112 @@ class Core(API):
         self.click(cmd.buttons[0])
         cmd = self.wait_for("MESSAGE_UPDATE", check=check)
         return Parser.postmemes(cmd.embeds[0].description)
+
+
+    def buy(self, item: str, quantity: int = 1, coupon: str = None, retry_attempts: int = 3, timeout:int = 10):
+        """Runs the `buy` command.
+        
+        Arguments
+        --------
+        item: `str`
+            The item to buy.
+        quantity: `int`
+            The number of items to buy.
+        coupon: `str`
+            The coupon to use.
+        retry_attempts: `int`
+            The amount of times to retry when executing the command fails.
+        timeout: `int`
+            The time it waits for to confirm whether a command was ran or not.
+
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
+        Returns
+        --------
+        CommandResult: Optional[`CommandResult`]
+        """
+
+        cmd = None
+        _quantity = str(quantity)
+        if not _quantity.isdigit() or _quantity == "0":
+            _quantity = "1"
+        
+        if coupon:
+            cmd = self.run_sub_command(
+                "shop",
+                "buy",
+                retry_attempts = retry_attempts,
+                timeout = timeout,
+                item = item,
+                quantity = _quantity,
+                coupon = coupon
+            )
+        else:
+            cmd = self.run_sub_command(
+                "shop",
+                "buy",
+                retry_attempts = retry_attempts,
+                timeout = timeout,
+                item = item,
+                quantity=_quantity
+            )
+
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+        
+        return Parser.buy(cmd.embeds[0].description, item, quantity)
+
+    def sell(self, item: str, quantity: int = 1, retry_attempts: int = 3, timeout:int = 10):
+        """Runs the `sell` command.
+        
+        Arguments
+        --------
+        item: `str`
+            The item to sell.
+        quantity: `int`
+            The number of items to sell.
+        retry_attempts: `int`
+            The amount of times to retry when executing the command fails.
+        timeout: `int`
+            The time it waits for to confirm whether a command was ran or not.
+
+        Raises
+        --------
+        InvalidComponent
+            invalidcomponentdescription
+        NonceTimeout
+            Couldn't get the nonce from the Websocket.
+        UnknownChannel
+            Bot doesn't have access to that channel.
+
+        Returns
+        --------
+        CommandResult: Optional[`CommandResult`]
+        """
+        
+        cmd = None
+        _quantity = str(quantity)
+        if not _quantity.isdigit() or _quantity == "0":
+            _quantity = "1"
+
+        cmd = self.run_slash_group_command(
+            "shop",
+            "sell",
+            "item",
+            retry_attempts = retry_attempts,
+            timeout = timeout,
+            item = item,
+            quantity = _quantity
+        )
+
+        if Parser.check_cooldown(cmd.embeds[0].description):
+            return Parser.cooldown(cmd.embeds[0].description)
+
+        return Parser.sell(cmd.embeds[0].description, item, quantity)

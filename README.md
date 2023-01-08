@@ -26,7 +26,7 @@ $ python3 -m pip install -U .
 from typing import Optional
 
 from DankCord import Client, Config
-from DankCord.Objects import Message
+from DankCord.objects import Message
 from pyloggor import pyloggor
 
 bot = Client(
@@ -53,5 +53,5 @@ message: Optional[Message] = bot.run_sub_command(name = "advancements", sub_name
 - Documentation: coming soon.
 
 # Special thanks
-- [ThePrivatePanda](https://github.com/ThePrivatePanda): An ex-maintainer of the project.
+- [ThePrivatePanda](https://github.com/ThePrivatePanda): The co-maintainer of the project.
 - All our other contributors, DankCord wouldn't have been what it is today without them.
