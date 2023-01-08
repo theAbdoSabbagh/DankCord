@@ -42,10 +42,10 @@ class API:
         option_type = 3
         for key, value in kwargs.items():
             for option in options:
-                print(f"Option: {option} - Name: {option['name']} - Check: {key.lower() == option['name'].lower()} - Key: {key} - Value: {value}")
+                # print(f"Option: {option} - Name: {option['name']} - Check: {key.lower() == option['name'].lower()} - Key: {key} - Value: {value}")
                 if option["name"].lower() == key.lower():
                     option_type = option["type"]
-                    print(f"{key}: {option_type}")
+                    # print(f"{key}: {option_type}")
             new_piece_of_data = {"type": option_type, "name": key, "value": value}
             options_.append(new_piece_of_data)
 
