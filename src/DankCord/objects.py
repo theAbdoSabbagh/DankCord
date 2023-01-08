@@ -221,7 +221,7 @@ class Message:
         ]
     
     def __repr__(self) -> str:
-        return f"""<Message author={self.author} content=\"{self.content}\" nonce={self.nonce}
+        return f"""<Message author={self.author} ephemeral={self.ephemeral} content=\"{self.content}\" nonce={self.nonce}
 id={self.id} timestamp={self.timestamp} channel_id={self.channel_id} embeds={self.embeds}
 components={self.components} buttons={self.buttons} dropdowns={self.dropdowns}>""".replace('\n', ' ')
 
