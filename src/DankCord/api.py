@@ -303,14 +303,22 @@ class API:
         sub_group_type = 1
         options = []
 
-        if command_info.get("options"):
-            for item in command_info["options"]:
-                if item["name"] == sub_name:
-                    sub_type = item["type"]
-                for item_ in item["options"]:
-                    if item_["name"] == sub_group_name:
-                        sub_group_type = item_["type"]
-            options = self._RawOptionsBuilder(command_info["options"][0]["options"][0]["options"], **kwargs)
+        for item in command_info.get("options", []): # Main cmd data
+            if item.get("name") == sub_name:
+                sub_type = item.get("type", sub_type)
+                for item_ in item.get("options", []): # Sub command data
+                    if item_.get("name") == sub_group_name:
+                        # print(item.get('name'), item_.get('name'), sub_group_name, item_.get('type'), sub_group_type)
+                        sub_group_type = item_.get("type", sub_group_type)
+        first_index = [index for index, item in enumerate(command_info.get('options', []))
+        if 'options' in item.keys() and item['name'] == sub_name][0]
+        second_index = [index for index, item in enumerate(command_info.get('options', [])[first_index].get('options', []))
+        if item['name'] == sub_group_name][0]
+        if command_info.get("options", [])[first_index].get("options")[second_index].get("options") is not None:
+            options = self._RawOptionsBuilder(
+                command_info.get("options", [])[first_index].get("options")[second_index].get("options"),
+                **kwargs
+            )
 
         data = {
             "type": 2,
